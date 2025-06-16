@@ -1,27 +1,43 @@
-import React, { useState } from 'react';
+import React, { useContext, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Lock, User } from 'lucide-react';
-import { useAuthStore } from '../stores/authStore';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
+import { StoreContext } from '../context/StoreContext';
+import { AuthAPI } from '../services/API/Auth';
 
 const AuthPage = () => {
   const navigate = useNavigate();
-  const { login, loading } = useAuthStore();
   const [isAdmin, setIsAdmin] = useState(false);
   const [credentials, setCredentials] = useState({
     username: '',
     password: ''
   });
 
+  const { setUser, isLoading, setIsLoading, setToken } = useContext(StoreContext);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
+
     try {
-      await login(credentials.username, credentials.password, isAdmin);
+      const response = await AuthAPI.login(credentials);
+      console.log('Login response:', response.data);
+      setUser(response.data.user);
+      setToken(response.data.token);
+
       toast.success('Login successful!');
+
+      setIsAdmin(response.data.user.isAdmin)
       navigate(isAdmin ? '/dashboard' : '/blog');
+
     } catch (error) {
+
       toast.error('Login failed. Please check your credentials.');
+      console.error('Login error:', error);
+      
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -91,10 +107,10 @@ const AuthPage = () => {
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={isLoading}
               className="w-full bg-purple-600 text-white py-2 rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50"
             >
-              {loading ? 'Logging in...' : 'Login'}
+              {isLoading ? 'Logging in...' : 'Login'}
             </button>
           </form>
         )}

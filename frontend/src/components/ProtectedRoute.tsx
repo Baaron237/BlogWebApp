@@ -1,15 +1,16 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
+import { StoreContext } from '../context/StoreContext';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const { user, isAdmin } = useAuthStore();
+  const { user} = useContext(StoreContext);
 
-  if (!user || !isAdmin) {
+  if (!user.isAdmin) {
     return <Navigate to="/" replace />;
   }
 

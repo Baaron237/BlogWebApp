@@ -1,14 +1,21 @@
-import React from 'react';
-import { Routes, Route, Link } from 'react-router-dom';
+import React, { useContext } from 'react';
+import { Routes, Route, Link, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Image, Palette, BarChart3, LogOut } from 'lucide-react';
-import { useAuthStore } from '../stores/authStore';
+
 import Analytics from '../components/dashboard/Analytics';
 import PostManager from '../components/dashboard/PostManager';
 import ThemeEditor from '../components/dashboard/ThemeEditor';
 import MediaLibrary from '../components/dashboard/MediaLibrary';
+import { StoreContext } from '../context/StoreContext';
 
 const Dashboard = () => {
-  const { logout } = useAuthStore();
+  const { logout } = useContext(StoreContext);
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
@@ -47,7 +54,7 @@ const Dashboard = () => {
             Themes
           </Link>
           <button
-            onClick={logout}
+            onClick={handleLogout}
             className="w-full flex items-center px-6 py-3 text-red-600 hover:bg-red-50"
           >
             <LogOut className="w-5 h-5 mr-3" />
