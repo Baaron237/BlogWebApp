@@ -7,17 +7,18 @@ const router = express.Router();
 router.get("/", authenticateToken, isAdmin, async (req, res) => {
   try {
     const [totalViews, totalLikes, totalComments] = await Promise.all([
-      Post.sum("view_count"),
-      Post.sum("like_count"),
+      Post.sum("viewCount"),
+      Post.sum("likeCount"),
       Comment.count(),
     ]);
 
-    res.json({
+    res.status(200).json({
       totalViews: totalViews || 0,
       totalLikes: totalLikes || 0,
       totalComments: totalComments || 0,
     });
   } catch (error) {
+    console.log("Error fetching analytics:", error);
     res.status(500).json({ error: error.message });
   }
 });

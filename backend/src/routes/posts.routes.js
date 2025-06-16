@@ -10,7 +10,7 @@ router.get("/", async (req, res) => {
     const posts = await Post.findAll({
       order: [["createdAt", "DESC"]],
     });
-    res.json(posts);
+    res.status(200).json({ posts });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -22,7 +22,7 @@ router.get("/:id", async (req, res) => {
     if (!post) {
       return res.status(404).json({ error: "Post not found" });
     }
-    res.json(post);
+    res.status(200).json({ post });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -83,7 +83,7 @@ router.put(
         mediaUrls,
       });
 
-      res.json(post);
+      res.status(200).json({ post });
     } catch (error) {
       res.status(500).json({ error: error.message });
     }
@@ -103,7 +103,7 @@ router.delete("/:id", authenticateToken, isAdmin, async (req, res) => {
       return res.status(404).json({ error: "Post not found" });
     }
 
-    res.json({ message: "Post deleted successfully" });
+    res.status(200).json({ message: "Post deleted successfully" });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
