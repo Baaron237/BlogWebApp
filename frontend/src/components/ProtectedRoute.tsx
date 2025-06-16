@@ -7,9 +7,9 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const { user} = useContext(StoreContext);
+  const { user } = useContext(StoreContext);
 
-  if (!user.isAdmin) {
+  if (!user?.isAdmin) {
     return <Navigate to="/" replace />;
   }
 

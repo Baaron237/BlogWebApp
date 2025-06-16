@@ -7,18 +7,21 @@ export const StoreContext = createContext<any>(null)
 
 const StoreContextProvider = ({ children } : { children: any}) => {
 
-    const [token, setToken] = useState<string>(() => localStorage.getItem('AUTH_TOKEN') || '');
+    const [token, setToken] = useState<string | null>(() => localStorage.getItem('AUTH_TOKEN') || '');
     const [isLoading, setIsLoading] = useState(false);
-    const [user, setUser] = useState<any>(null);
+    const [user, setUser] = useState<string | null>(() => localStorage.getItem('USER_DATA') || '');
 
     const logout = () => {
         localStorage.removeItem("AUTH_TOKEN");
+        localStorage.removeItem("USER_DATA");   
         setUser(null);
+        setToken(null);
     };
 
     useEffect(() => {
         if (token) {
             localStorage.setItem('AUTH_TOKEN', token);
+            localStorage.setItem("USER_DATA", JSON.stringify(user));
         }
     }, [token]);
 

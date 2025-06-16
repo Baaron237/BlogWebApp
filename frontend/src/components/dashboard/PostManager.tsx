@@ -7,6 +7,10 @@ import toast from "react-hot-toast";
 import { PostsAPI } from "../../services/API/Posts";
 import { StoreContext } from "../../context/StoreContext";
 import LoadingScreen from "../LoadingScreen";
+import dayjs from 'dayjs';
+import 'dayjs/locale/fr';
+
+dayjs.locale('fr');
 
 const PostList = () => {
   const [posts, setPosts] = useState([]);
@@ -41,6 +45,10 @@ const PostList = () => {
     }
   };
 
+  const formatDate = (dateString: Date) => {
+  return dayjs(dateString).format('D MMMM YYYY');
+};
+
   useEffect(() => {
     fetchPosts();
   }, []);
@@ -72,7 +80,7 @@ const PostList = () => {
                 {post.title}
               </h3>
               <p className="text-sm text-gray-500">
-                {new Date(post.created_at).toLocaleDateString()}
+                {formatDate(post.created_at)}
               </p>
             </div>
             <div className="flex space-x-2">

@@ -1,9 +1,12 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Save, Image as ImageIcon, X } from "lucide-react";
 import toast from "react-hot-toast";
+import { PostsAPI } from "../../services/API/Posts";
+import { StoreContext } from "../../context/StoreContext";
 
 const PostEditor = () => {
+  const { token } = useContext(StoreContext)
   const { id } = useParams();
   const navigate = useNavigate();
   const [post, setPost] = useState({
@@ -12,67 +15,73 @@ const PostEditor = () => {
     media_urls: [] as string[],
   });
 
-  useEffect(() => {
-    if (id) {
-      fetchPost();
-    }
-  }, [id]);
 
   const fetchPost = async () => {
-    const { data, error } = await supabase
-      .from("posts")
-      .select("*")
-      .eq("id", id)
-      .single();
-
-    if (error) {
+    try {
+      const response = await PostsAPI.getOnePost(id!);
+      setPost(response.data.post || {});
+    } catch (error) {
       toast.error("Failed to fetch post");
-      return;
+      console.error("Error fetching post:", error);
     }
-
-    setPost(data);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const { error } = id
-      ? await supabase.from("posts").update(post).eq("id", id)
-      : await supabase.from("posts").insert([post]);
-
-    if (error) {
-      toast.error("Failed to save post");
-      return;
+    if(id){
+      try {
+        await PostsAPI.updatePost(id, post, token);
+        
+        toast.success("Post updated successfully");
+        navigate("/dashboard/posts");
+      } catch (error) {
+        toast.error("Failed to update post");
+        console.error("Error updating post:", error);
+        
+      }
+    } else {
+      try {
+        await PostsAPI.createPost(post, token);
+        toast.success("Post saved successfully");
+        navigate("/dashboard/posts");
+      } catch (error) {
+        toast.error("Failed to create post");
+        console.error("Error creating post:", error);
+      }
     }
-
-    toast.success("Post saved successfully");
-    navigate("/dashboard/posts");
   };
 
-  const handleMediaUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  // const handleMediaUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  //   const file = e.target.files?.[0];
+  //   if (!file) return;
 
-    const fileExt = file.name.split(".").pop();
-    const fileName = `${Math.random()}.${fileExt}`;
-    const filePath = `${fileName}`;
+  //   const fileExt = file.name.split(".").pop();
+  //   const fileName = `${Math.random()}.${fileExt}`;
+  //   const filePath = `${fileName}`;
 
-    const { error: uploadError } = await supabase.storage
-      .from("media")
-      .upload(filePath, file);
+  //   const { error: uploadError } = await supabase.storage
+  //     .from("media")
+  //     .upload(filePath, file);
 
-    if (uploadError) {
-      toast.error("Failed to upload media");
-      return;
+  //   if (uploadError) {
+  //     toast.error("Failed to upload media");
+  //     return;
+  //   }
+
+  //   const { data } = supabase.storage.from("media").getPublicUrl(filePath);
+
+  //   setPost({
+  //     ...post,
+  //     media_urls: [...post.media_urls, data.publicUrl],
+  //   });
+  // };
+
+  useEffect(() => {
+    if (id) {
+      fetchPost();
     }
-
-    const { data } = supabase.storage.from("media").getPublicUrl(filePath);
-
-    setPost({
-      ...post,
-      media_urls: [...post.media_urls, data.publicUrl],
-    });
-  };
+  }, [id]);
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -120,7 +129,7 @@ const PostEditor = () => {
             Media
           </label>
           <div className="grid grid-cols-4 gap-4 mb-4">
-            {post.media_urls.map((url, index) => (
+            {post.media_urls?.map((url, index) => (
               <div key={url} className="relative">
                 <img
                   src={url}
@@ -151,7 +160,7 @@ const PostEditor = () => {
               type="file"
               className="hidden"
               accept="image/*"
-              onChange={handleMediaUpload}
+              // onChange={handleMediaUpload}
             />
           </label>
         </div>
