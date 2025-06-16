@@ -22,7 +22,7 @@ const AuthPage = () => {
 
     try {
       const response = await AuthAPI.login(credentials);
-      console.log('Login response:', response.data);
+      
       setUser(response.data.user);
       setToken(response.data.token);
 

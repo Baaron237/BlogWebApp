@@ -22,105 +22,31 @@ const PostView = () => {
   }, [id]);
 
   const fetchPost = async () => {
-    const { data, error } = await supabase
-      .from("posts")
-      .select("*")
-      .eq("id", id)
-      .single();
 
-    if (error) {
-      toast.error("Failed to fetch post");
-      return;
-    }
-
-    setPost(data);
   };
 
   const fetchComments = async () => {
-    const { data, error } = await supabase
-      .from("comments")
-      .select("*")
-      .eq("post_id", id)
-      .order("created_at", { ascending: false });
 
-    if (error) {
-      toast.error("Failed to fetch comments");
-      return;
-    }
-
-    setComments(data || []);
   };
 
   const fetchActiveTheme = async () => {
-    const { data, error } = await supabase
-      .from("themes")
-      .select("*")
-      .eq("is_active", true)
-      .single();
 
-    if (error) {
-      console.error("Failed to fetch active theme");
-      return;
-    }
-
-    setActiveTheme(data);
   };
 
   const incrementViewCount = async () => {
-    const { error } = await supabase.rpc("increment_view_count", {
-      post_id: id,
-    });
-    if (error) console.error("Failed to increment view count:", error);
+
   };
 
   const handleLike = async () => {
-    if (!post) return;
 
-    const { error } = await supabase
-      .from("posts")
-      .update({ like_count: post.like_count + 1 })
-      .eq("id", post.id);
-
-    if (error) {
-      toast.error("Failed to like post");
-      return;
-    }
-
-    fetchPost();
   };
 
   const handleShare = async () => {
-    if (!post) return;
 
-    const shareData = {
-      title: post.title,
-      text: post.content.substring(0, 100) + "...",
-      url: window.location.href,
-    };
-
-    try {
-      await navigator.share(shareData);
-    } catch (err) {
-      console.error("Share failed:", err);
-    }
   };
 
   const addComment = async (emoji: string) => {
-    const { error } = await supabase.from("comments").insert([
-      {
-        post_id: id,
-        emoji: emoji,
-      },
-    ]);
 
-    if (error) {
-      toast.error("Failed to add comment");
-      return;
-    }
-
-    setShowEmojiPicker(false);
-    fetchComments();
-    toast.success("Comment added!");
   };
 
   if (!post || !activeTheme) return null;

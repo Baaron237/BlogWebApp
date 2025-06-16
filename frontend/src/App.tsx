@@ -6,19 +6,18 @@ import Dashboard from './pages/Dashboard';
 import Blog from './pages/Blog';
 import PostView from './pages/PostView';
 import ProtectedRoute from './components/ProtectedRoute';
-import { useAuthStore } from './stores/authStore';
 import LoadingScreen from './components/LoadingScreen';
 
 function App() {
-  const { initialized, checkAuth } = useAuthStore();
+  // const { initialized, checkAuth } = useAuthStore();
 
-  useEffect(() => {
-    checkAuth();
-  }, [checkAuth]);
+  // useEffect(() => {
+  //   checkAuth();
+  // }, [checkAuth]);
 
-  if (!initialized) {
-    return <LoadingScreen />;
-  }
+  // if (!initialized) {
+  //   return <LoadingScreen />;
+  // }
 
   return (
     <Router>

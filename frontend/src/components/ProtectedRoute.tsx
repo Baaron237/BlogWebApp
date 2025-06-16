@@ -1,6 +1,5 @@
 import React, { useContext } from 'react';
 import { Navigate } from 'react-router-dom';
-import { useAuthStore } from '../stores/authStore';
 import { StoreContext } from '../context/StoreContext';
 
 interface ProtectedRouteProps {

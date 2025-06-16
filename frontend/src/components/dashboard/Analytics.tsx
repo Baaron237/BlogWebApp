@@ -1,7 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { BarChart, Users, ThumbsUp, MessageCircle } from "lucide-react";
+import { AnalyticsAPI } from "../../services/API/Analytics";
+import { StoreContext } from "../../context/StoreContext";
+import LoadingScreen from "../LoadingScreen";
 
 const Analytics = () => {
+  const { token, isLoading, setIsLoading } = useContext(StoreContext);
   const [stats, setStats] = useState({
     totalViews: 0,
     totalLikes: 0,
@@ -9,39 +13,39 @@ const Analytics = () => {
     popularPosts: [],
   });
 
+
   useEffect(() => {
     const fetchStats = async () => {
-      const [viewsData, commentsData, postsData] = await Promise.all([
-        supabase
-          .from("posts")
-          .select("view_count, like_count")
-          .order("view_count", { ascending: false }),
-        supabase.from("comments").select("count", { count: "exact" }),
-        supabase
-          .from("posts")
-          .select("title, view_count, like_count")
-          .order("view_count", { ascending: false })
-          .limit(5),
-      ]);
+      setIsLoading(true);
+      try{
+        const response = await AnalyticsAPI.getAnalytics(token);
+        
+        setStats({
+          totalViews: response.data.totalViews,
+          totalLikes: response.data.totalLikes,
+          totalComments: response.data.totalComments,
+          popularPosts: response.data.popularPosts,
+        });
 
-      const totalViews =
-        viewsData.data?.reduce((sum, post) => sum + post.view_count, 0) || 0;
-      const totalLikes =
-        viewsData.data?.reduce((sum, post) => sum + post.like_count, 0) || 0;
+      }catch (error) {
+        
+        console.error("Error fetching analytics:", error);
 
-      setStats({
-        totalViews,
-        totalLikes,
-        totalComments: commentsData.count || 0,
-        popularPosts: postsData.data || [],
-      });
+      }finally {
+        setIsLoading(false);
+      }
     };
 
     fetchStats();
   }, []);
 
+
+
   return (
     <div className="space-y-6">
+      {
+        isLoading && <LoadingScreen />
+      }
       <h2 className="text-2xl font-bold text-gray-800">Analytics Overview</h2>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -87,7 +91,7 @@ const Analytics = () => {
           Popular Posts
         </h3>
         <div className="space-y-4">
-          {stats.popularPosts.map((post: any) => (
+          {stats.popularPosts?.map((post: any) => (
             <div
               key={post.id}
               className="flex items-center justify-between p-4 hover:bg-gray-50 rounded-lg"

@@ -13,48 +13,15 @@ const Blog = () => {
   }, []);
 
   const fetchPosts = async () => {
-    const { data, error } = await supabase
-      .from("posts")
-      .select("*")
-      .order("created_at", { ascending: false });
 
-    if (error) {
-      toast.error("Failed to fetch posts");
-      return;
-    }
-
-    setPosts(data || []);
   };
 
   const fetchActiveTheme = async () => {
-    const { data, error } = await supabase
-      .from("themes")
-      .select("*")
-      .eq("is_active", true)
-      .single();
 
-    if (error) {
-      console.error("Failed to fetch active theme");
-      return;
-    }
-
-    setActiveTheme(data);
   };
 
   const handleLike = async (postId: string) => {
-    const { error } = await supabase
-      .from("posts")
-      .update({
-        like_count: posts.find((p: any) => p.id === postId).like_count + 1,
-      })
-      .eq("id", postId);
 
-    if (error) {
-      toast.error("Failed to like post");
-      return;
-    }
-
-    fetchPosts();
   };
 
   const handleShare = async (post: any) => {
