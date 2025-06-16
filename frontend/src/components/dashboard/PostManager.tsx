@@ -1,45 +1,55 @@
-import React, { useState, useEffect } from "react";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { useState, useEffect, useContext } from "react";
 import { Routes, Route, useNavigate } from "react-router-dom";
 import { Plus, Edit2, Trash2 } from "lucide-react";
 import PostEditor from "./PostEditor";
 import toast from "react-hot-toast";
+import { PostsAPI } from "../../services/API/Posts";
+import { StoreContext } from "../../context/StoreContext";
+import LoadingScreen from "../LoadingScreen";
 
 const PostList = () => {
   const [posts, setPosts] = useState([]);
   const navigate = useNavigate();
+  const { isLoading, setIsLoading, token } = useContext(StoreContext);
+
+
+  const fetchPosts = async () => {
+    setIsLoading(true);
+    try {
+      const response = await PostsAPI.getAllPosts();
+      setPosts(response.data?.posts || []);
+    } catch (error) {
+      console.error("Error fetching posts:", error);
+      toast.error("Failed to fetch posts");  
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const deletePost = async (id: string) => {
+    setIsLoading(true);
+    try {
+      await PostsAPI.deletePost(id, token);
+      toast.success("Post deleted successfully");
+      fetchPosts();
+    } catch (error) {
+      console.error("Error deleting post:", error);
+      toast.error("Failed to delete post");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetchPosts();
   }, []);
 
-  const fetchPosts = async () => {
-    const { data, error } = await supabase
-      .from("posts")
-      .select("*")
-      .order("created_at", { ascending: false });
-
-    if (error) {
-      toast.error("Failed to fetch posts");
-      return;
-    }
-
-    setPosts(data || []);
-  };
-
-  const deletePost = async (id: string) => {
-    const { error } = await supabase.from("posts").delete().eq("id", id);
-
-    if (error) {
-      toast.error("Failed to delete post");
-      return;
-    }
-
-    toast.success("Post deleted successfully");
-    fetchPosts();
-  };
-
   return (
     <div className="space-y-6">
+      {
+        isLoading && <LoadingScreen />
+      }
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold text-gray-800">Posts</h2>
         <button
