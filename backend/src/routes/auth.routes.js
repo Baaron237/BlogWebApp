@@ -1,6 +1,7 @@
 import express from "express";
 import jwt from "jsonwebtoken";
 import { User } from "../models/index.js";
+import bcryptjs from "bcryptjs";
 
 const router = express.Router();
 
@@ -13,7 +14,9 @@ router.post("/login", async (req, res) => {
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
-    if (user.password !== password) {
+    const isMatch = bcryptjs.compareSync(password, user.password);
+
+    if (!isMatch) {
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
@@ -31,6 +34,7 @@ router.post("/login", async (req, res) => {
         isAdmin: user.isAdmin,
       },
     });
+    
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

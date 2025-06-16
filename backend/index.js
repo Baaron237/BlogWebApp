@@ -15,7 +15,7 @@ import postsRoutes from "./src/routes/posts.routes.js";
 import themesRoutes from "./src/routes/themes.routes.js";
 
 // Import database configuration
-import "./src/models/index.js";
+import { dbConnection } from "./src/config/db.js";
 
 dotenv.config();
 
@@ -37,6 +37,7 @@ app.use("/api/comments", commentsRoutes);
 app.use("/api/posts", postsRoutes);
 app.use("/api/themes", themesRoutes);
 
-app.listen(port, () => {
+app.listen(port, async () => {
+  await dbConnection();
   console.log(`Server running on port ${port}`);
 });
