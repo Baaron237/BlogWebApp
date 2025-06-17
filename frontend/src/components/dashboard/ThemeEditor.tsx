@@ -1,76 +1,75 @@
-import React, { useState, useEffect } from "react";
-import { Save, Plus, Trash2 } from "lucide-react";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { useState, useEffect, useContext } from "react";
+import { Plus, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
+import { ThemesAPI } from "../../services/API/Themes";
+import { StoreContext } from "../../context/StoreContext";
 
 const ThemeEditor = () => {
   const [themes, setThemes] = useState([]);
-  const [selectedTheme, setSelectedTheme] = useState(null);
-
-  useEffect(() => {
-    fetchThemes();
-  }, []);
+  const { token } = useContext(StoreContext);
 
   const fetchThemes = async () => {
-    const { data, error } = await supabase
-      .from("themes")
-      .select("*")
-      .order("created_at", { ascending: false });
-
-    if (error) {
+    try {
+      const response = await ThemesAPI.getAllThemes();
+      setThemes(response.data.themes);
+      
+    } catch (error) {
+      console.error("Error fetching themes:", error);
       toast.error("Failed to fetch themes");
-      return;
     }
-
-    setThemes(data || []);
   };
 
   const handleThemeUpdate = async (theme: any) => {
-    const { error } = await supabase
-      .from("themes")
-      .update(theme)
-      .eq("id", theme.id);
-
-    if (error) {
+    try {
+      await ThemesAPI.updateTheme(theme.id, theme, token);
+      toast.success("Theme updated successfully");
+      fetchThemes();
+    } catch (error) {
+      console.error("Error updating theme:", error);
       toast.error("Failed to update theme");
-      return;
     }
-
-    toast.success("Theme updated successfully");
-    fetchThemes();
   };
 
   const createNewTheme = async () => {
     const newTheme = {
       name: "New Theme",
-      primary_color: "#ffffff",
-      secondary_color: "#f3f4f6",
-      background_color: "#e5e7eb",
-      text_color: "#111827",
-      is_active: false,
+      primaryColor: "#ffffff",
+      secondaryColor: "#f3f4f6",
+      backgroundColor: "#e5e7eb",
+      textColor: "#111827",
+      isActive: false,
     };
+    try {
+      await ThemesAPI.createTheme(newTheme, token);
 
-    const { error } = await supabase.from("themes").insert([newTheme]);
-
-    if (error) {
-      toast.error("Failed to create theme");
+      toast.success("Theme created successfully");
+      fetchThemes();
+      
+    } catch (error) {
+      console.error("Error creating new theme:", error);
+      toast.error("Failed to create new theme");
       return;
+      
     }
 
-    toast.success("Theme created successfully");
-    fetchThemes();
   };
 
   const deleteTheme = async (id: string) => {
-    const { error } = await supabase.from("themes").delete().eq("id", id);
-
-    if (error) {
+    try {
+      await ThemesAPI.deleteTheme(id, token);
+      toast.success("Theme deleted successfully");
+      fetchThemes();
+    } catch (error) {
+      console.error("Error deleting theme:", error);
       toast.error("Failed to delete theme");
-      return;
+      
     }
-
-    toast.success("Theme deleted successfully");
-    fetchThemes();
   };
+
+  useEffect(() => {
+    fetchThemes();
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -100,15 +99,15 @@ const ThemeEditor = () => {
               <div className="flex items-center space-x-2">
                 <button
                   onClick={() =>
-                    handleThemeUpdate({ ...theme, is_active: !theme.is_active })
+                    handleThemeUpdate({ ...theme, isActive: !theme.isActive })
                   }
                   className={`px-3 py-1 rounded-full text-sm ${
-                    theme.is_active
+                    theme.isActive
                       ? "bg-green-100 text-green-800"
                       : "bg-gray-100 text-gray-800"
                   }`}
                 >
-                  {theme.is_active ? "Active" : "Inactive"}
+                  {theme.isActive ? "Active" : "Inactive"}
                 </button>
                 <button
                   onClick={() => deleteTheme(theme.id)}
@@ -126,11 +125,11 @@ const ThemeEditor = () => {
                 </label>
                 <input
                   type="color"
-                  value={theme.primary_color}
+                  value={theme.primaryColor}
                   onChange={(e) =>
                     handleThemeUpdate({
                       ...theme,
-                      primary_color: e.target.value,
+                      primaryColor: e.target.value,
                     })
                   }
                   className="w-full h-10 rounded-lg cursor-pointer"
@@ -143,11 +142,11 @@ const ThemeEditor = () => {
                 </label>
                 <input
                   type="color"
-                  value={theme.secondary_color}
+                  value={theme.secondaryColor}
                   onChange={(e) =>
                     handleThemeUpdate({
                       ...theme,
-                      secondary_color: e.target.value,
+                      secondaryColor: e.target.value,
                     })
                   }
                   className="w-full h-10 rounded-lg cursor-pointer"
@@ -160,11 +159,11 @@ const ThemeEditor = () => {
                 </label>
                 <input
                   type="color"
-                  value={theme.background_color}
+                  value={theme.backgroundColor}
                   onChange={(e) =>
                     handleThemeUpdate({
                       ...theme,
-                      background_color: e.target.value,
+                      backgroundColor: e.target.value,
                     })
                   }
                   className="w-full h-10 rounded-lg cursor-pointer"
@@ -177,9 +176,9 @@ const ThemeEditor = () => {
                 </label>
                 <input
                   type="color"
-                  value={theme.text_color}
+                  value={theme.textColor}
                   onChange={(e) =>
-                    handleThemeUpdate({ ...theme, text_color: e.target.value })
+                    handleThemeUpdate({ ...theme, textColor: e.target.value })
                   }
                   className="w-full h-10 rounded-lg cursor-pointer"
                 />
@@ -189,21 +188,21 @@ const ThemeEditor = () => {
             <div
               className="mt-6 p-4 rounded-lg"
               style={{
-                backgroundColor: theme.background_color,
-                color: theme.text_color,
+                backgroundColor: theme.backgroundColor,
+                color: theme.textColor,
               }}
             >
               <h3 className="text-lg font-medium mb-2">Preview</h3>
               <div className="space-y-2">
                 <div
                   className="p-3 rounded-lg"
-                  style={{ backgroundColor: theme.primary_color }}
+                  style={{ backgroundColor: theme.primaryColor }}
                 >
                   Primary Color
                 </div>
                 <div
                   className="p-3 rounded-lg"
-                  style={{ backgroundColor: theme.secondary_color }}
+                  style={{ backgroundColor: theme.secondaryColor }}
                 >
                   Secondary Color
                 </div>
