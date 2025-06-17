@@ -34,4 +34,7 @@ export class PostsAPI {
         });
     };
 
+    static incrementViewPost = (postId: string) => {
+        return Axios.put(`/posts/views/${postId}`);
+    }
 }

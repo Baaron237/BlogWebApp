@@ -46,8 +46,8 @@ const PostList = () => {
   };
 
   const formatDate = (dateString: Date) => {
-  return dayjs(dateString).format('D MMMM YYYY');
-};
+    return dayjs(dateString).format('D MMMM YYYY');
+  };
 
   useEffect(() => {
     fetchPosts();

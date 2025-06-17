@@ -22,6 +22,10 @@ export class ThemesAPI {
         });
     };
 
+    static getActiveTheme = () => {
+        return Axios.get("/themes/activedTheme");
+    };
+
     static deleteTheme = (id: string, token: string) => {
         return Axios.delete(`/themes/${id}`, {
             headers: {

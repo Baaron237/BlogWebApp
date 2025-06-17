@@ -1,27 +1,59 @@
-import React, { useEffect, useState } from "react";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import React, { useContext, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ThumbsUp, MessageCircle, Share2 } from "lucide-react";
 import toast from "react-hot-toast";
+import { PostsAPI } from "../services/API/Posts";
+import { StoreContext } from "../context/StoreContext";
+import { ThemesAPI } from "../services/API/Themes";
+import dayjs from 'dayjs';
+import 'dayjs/locale/fr';
+
+dayjs.locale('fr');
+
+type Theme = {
+  backgroundColor?: string;
+  textColor?: string;
+  primaryColor?: string;
+  [key: string]: any;
+};
 
 const Blog = () => {
   const [posts, setPosts] = useState([]);
-  const [activeTheme, setActiveTheme] = useState(null);
+  const [activeTheme, setActiveTheme] = useState<Theme | null>(null);
+  const { isLoading, setIsLoading, token } = useContext(StoreContext);
 
-  useEffect(() => {
-    fetchPosts();
-    fetchActiveTheme();
-  }, []);
+  
 
   const fetchPosts = async () => {
-
+    setIsLoading(true);
+    try {
+      const response = await PostsAPI.getAllPosts();
+      setPosts(response.data?.posts || []);
+    } catch (error) {
+      console.error("Error fetching posts:", error);
+      toast.error("Failed to fetch posts");  
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const fetchActiveTheme = async () => {
-
+    setIsLoading(true);
+    try {
+      const response = await ThemesAPI.getActiveTheme();
+      setActiveTheme(response.data?.theme || null);
+    } catch (error) {
+      console.error("Error fetching active theme:", error);
+      toast.error("Failed to fetch active theme");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleLike = async (postId: string) => {
-
+    
+    fetchPosts();
   };
 
   const handleShare = async (post: any) => {
@@ -38,11 +70,20 @@ const Blog = () => {
     }
   };
 
+  const formatDate = (dateString: Date) => {
+      return dayjs(dateString).format('D MMMM YYYY');
+  };
+
+  useEffect(() => {
+    fetchPosts();
+    fetchActiveTheme();
+  }, []);
+
   return (
     <div
       style={{
-        backgroundColor: activeTheme?.background_color || "#f3f4f6",
-        color: activeTheme?.text_color || "#111827",
+        backgroundColor: activeTheme?.backgroundColor || "#f3f4f6",
+        color: activeTheme?.textColor || "#111827",
       }}
     >
       <div className="max-w-4xl mx-auto py-12 px-4">
@@ -54,7 +95,7 @@ const Blog = () => {
               key={post.id}
               className="rounded-xl overflow-hidden shadow-lg"
               style={{
-                backgroundColor: activeTheme?.primary_color || "#ffffff",
+                backgroundColor: activeTheme?.primaryColor || "#ffffff",
               }}
             >
               {post.media_urls?.[0] && (
@@ -80,7 +121,7 @@ const Blog = () => {
                       className="flex items-center space-x-1 text-gray-600 hover:text-blue-600"
                     >
                       <ThumbsUp className="w-5 h-5" />
-                      <span>{post.like_count || 0}</span>
+                      <span>{post.likeCount || 0}</span>
                     </button>
 
                     <Link
@@ -88,7 +129,7 @@ const Blog = () => {
                       className="flex items-center space-x-1 text-gray-600 hover:text-blue-600"
                     >
                       <MessageCircle className="w-5 h-5" />
-                      <span>{post.comment_count || 0}</span>
+                      <span>{post.commentCount || 0}</span>
                     </Link>
 
                     <button
@@ -101,7 +142,7 @@ const Blog = () => {
                   </div>
 
                   <span className="text-sm text-gray-500">
-                    {new Date(post.created_at).toLocaleDateString()}
+                    {formatDate(post.created_at)}
                   </span>
                 </div>
               </div>
