@@ -1,9 +1,12 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect, useContext } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Save, Image as ImageIcon, X } from "lucide-react";
+import { Save, Image as ImageIcon, X, Plus } from "lucide-react";
 import toast from "react-hot-toast";
 import { PostsAPI } from "../../services/API/Posts";
 import { StoreContext } from "../../context/StoreContext";
+import Illustration from "../Illustration";
+import { API_URL } from "../../constants/API_URL";
 
 const PostEditor = () => {
   const { token } = useContext(StoreContext)
@@ -15,7 +18,18 @@ const PostEditor = () => {
     media_urls: [] as string[],
   });
 
- 
+  const [illustrations, setIllustrations] = useState<any>([]);
+
+  const handleAddComponent = () => {  
+    if(illustrations.length < 5) {
+      setIllustrations([...illustrations, { content: "", media: null }]);
+    }
+  }
+
+ const handleIllustrationChange = (index: number, updatedValues: any) => {
+        const updatedData = illustrations.map((item: object, i: number) => (i === index ? updatedValues : item));
+        setIllustrations(updatedData);
+    };
 
   const fetchPost = async () => {
     try {
@@ -30,20 +44,33 @@ const PostEditor = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if(id){
+    if (id) {
       try {
         await PostsAPI.updatePost(id, post, token);
-        
         toast.success("Post updated successfully");
         navigate("/dashboard/posts");
       } catch (error) {
         toast.error("Failed to update post");
         console.error("Error updating post:", error);
-        
       }
     } else {
+      const newPost = new FormData();
+      newPost.append("title", post.title);
+      newPost.append("content", post.content);
+
+      const illustrationContents = illustrations.map((i: any) => ({
+        content: i.content,
+      }));
+      newPost.append("illustrations", JSON.stringify(illustrationContents));
+
+      illustrations.forEach((i: any) => {
+        if (i.media) {
+          newPost.append("media", i.media);
+        }
+      });
+
       try {
-        await PostsAPI.createPost(post, token);
+        await PostsAPI.createPost(newPost, token);
         toast.success("Post saved successfully");
         navigate("/dashboard/posts");
       } catch (error) {
@@ -51,32 +78,7 @@ const PostEditor = () => {
         console.error("Error creating post:", error);
       }
     }
-  };
-
-  // const handleMediaUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-  //   const file = e.target.files?.[0];
-  //   if (!file) return;
-
-  //   const fileExt = file.name.split(".").pop();
-  //   const fileName = `${Math.random()}.${fileExt}`;
-  //   const filePath = `${fileName}`;
-
-  //   const { error: uploadError } = await supabase.storage
-  //     .from("media")
-  //     .upload(filePath, file);
-
-  //   if (uploadError) {
-  //     toast.error("Failed to upload media");
-  //     return;
-  //   }
-
-  //   const { data } = supabase.storage.from("media").getPublicUrl(filePath);
-
-  //   setPost({
-  //     ...post,
-  //     media_urls: [...post.media_urls, data.publicUrl],
-  //   });
-  // };
+};
 
   useEffect(() => {
     if (id) {
@@ -126,16 +128,21 @@ const PostEditor = () => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Media
-          </label>
+          {
+            !id && (
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Illustrations
+              </label>
+            )
+          }
           <div className="grid grid-cols-4 gap-4 mb-4">
-            {post.media_urls?.map((url, index) => (
-              <div key={url} className="relative">
+            {post.media_urls?.map((media: any, index: number) => (
+              <div key={media.id} className="relative">
                 <img
-                  src={url}
+                  src={`${API_URL}/uploads/${media.url}`}
                   alt={`Media ${index + 1}`}
                   className="w-full h-32 object-cover rounded-lg"
+                  crossOrigin="anonymous"
                 />
                 <button
                   type="button"
@@ -152,7 +159,7 @@ const PostEditor = () => {
               </div>
             ))}
           </div>
-          <label className="flex items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer hover:bg-gray-50">
+          {/* <label className="flex items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer hover:bg-gray-50">
             <div className="flex flex-col items-center">
               <ImageIcon className="w-8 h-8 text-gray-400" />
               <span className="mt-2 text-sm text-gray-500">Add Media</span>
@@ -163,7 +170,26 @@ const PostEditor = () => {
               accept="image/*"
               // onChange={handleMediaUpload}
             />
-          </label>
+          </label> */}
+          {
+            illustrations.map((illustration: any, index: number) => (
+              <Illustration
+                key={index}
+                index={index}
+                values={illustration}
+                onChange={handleIllustrationChange}
+              />
+            ))
+          }
+          {
+            (illustrations.length  < 5 && !id ) && (
+              <div className="w-full flex justify-end">
+                  <span onClick={handleAddComponent} className='bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center cursor-pointer'>
+                      <Plus className="w-5 h-5" />
+                  </span>
+              </div>
+            ) 
+          }
         </div>
       </div>
     </form>

@@ -7,9 +7,9 @@ export const StoreContext = createContext<any>(null)
 
 const StoreContextProvider = ({ children } : { children: any}) => {
 
-    const [token, setToken] = useState<string | null>(() => localStorage.getItem('AUTH_TOKEN') || '');
+    const [token, setToken] = useState<string | null>(() => localStorage.getItem('AUTH_TOKEN'));
     const [isLoading, setIsLoading] = useState(false);
-    const [user, setUser] = useState<string | null>(() => localStorage.getItem('USER_DATA') || '');
+    const [user, setUser] = useState<string | null>(() => localStorage.getItem('USER_DATA'));
 
     const logout = () => {
         localStorage.removeItem("AUTH_TOKEN");
@@ -18,12 +18,29 @@ const StoreContextProvider = ({ children } : { children: any}) => {
         setToken(null);
     };
 
+    // useEffect(() => {
+    //     if (token) {
+    //         localStorage.setItem('AUTH_TOKEN', token);
+    //         localStorage.setItem("USER_DATA", JSON.stringify(user));
+    //     }
+    // }, [token]);
+
+
     useEffect(() => {
         if (token) {
             localStorage.setItem('AUTH_TOKEN', token);
-            localStorage.setItem("USER_DATA", JSON.stringify(user));
+        } else {
+            localStorage.removeItem('AUTH_TOKEN');
         }
     }, [token]);
+
+    useEffect(() => {
+        if (user) {
+            localStorage.setItem('USER_DATA', user);
+        } else {
+            localStorage.removeItem('USER_DATA');
+        }
+    }, [user]);
 
     const contextValue = {
         token,

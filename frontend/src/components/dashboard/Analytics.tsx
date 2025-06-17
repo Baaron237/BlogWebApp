@@ -1,11 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useContext, useEffect, useState } from "react";
 import { BarChart, Users, ThumbsUp, MessageCircle } from "lucide-react";
 import { AnalyticsAPI } from "../../services/API/Analytics";
 import { StoreContext } from "../../context/StoreContext";
-import LoadingScreen from "../LoadingScreen";
 
 const Analytics = () => {
-  const { token, isLoading, setIsLoading } = useContext(StoreContext);
+  const { token } = useContext(StoreContext);
   const [stats, setStats] = useState({
     totalViews: 0,
     totalLikes: 0,
@@ -15,37 +15,35 @@ const Analytics = () => {
 
 
   useEffect(() => {
+    if (!token) return;
+
     const fetchStats = async () => {
-      setIsLoading(true);
       try{
         const response = await AnalyticsAPI.getAnalytics(token);
         
-        setStats({
-          totalViews: response.data.totalViews,
-          totalLikes: response.data.totalLikes,
-          totalComments: response.data.totalComments,
-          popularPosts: response.data.popularPosts,
+        setStats(prev => {
+          return {
+            totalViews: response.data.totalViews,
+            totalLikes: response.data.totalLikes,
+            totalComments: response.data.totalComments,
+            popularPosts: response.data.popularPosts,
+          };
         });
 
       }catch (error) {
         
         console.error("Error fetching analytics:", error);
 
-      }finally {
-        setIsLoading(false);
       }
     };
 
     fetchStats();
-  }, []);
+  }, [token]);
 
 
 
   return (
     <div className="space-y-6">
-      {
-        isLoading && <LoadingScreen />
-      }
       <h2 className="text-2xl font-bold text-gray-800">Analytics Overview</h2>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -91,7 +89,7 @@ const Analytics = () => {
           Popular Posts
         </h3>
         <div className="space-y-4">
-          {stats.popularPosts?.map((post: any) => (
+          {/* {stats.popularPosts?.map((post: any) => (
             <div
               key={post.id}
               className="flex items-center justify-between p-4 hover:bg-gray-50 rounded-lg"
@@ -108,7 +106,7 @@ const Analytics = () => {
                 </span>
               </div>
             </div>
-          ))}
+          ))} */}
         </div>
       </div>
     </div>

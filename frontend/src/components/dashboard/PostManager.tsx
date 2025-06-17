@@ -25,7 +25,6 @@ const PostList = () => {
       setPosts(response.data?.posts || []);
     } catch (error) {
       console.error("Error fetching posts:", error);
-      toast.error("Failed to fetch posts");  
     } finally {
       setIsLoading(false);
     }

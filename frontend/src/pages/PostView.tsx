@@ -9,6 +9,7 @@ import { ThemesAPI } from "../services/API/Themes";
 import dayjs from 'dayjs';
 import 'dayjs/locale/fr';
 import { StoreContext } from "../context/StoreContext";
+import { API_URL } from "../constants/API_URL";
 
 dayjs.locale('fr');
 
@@ -61,7 +62,12 @@ const PostView = () => {
   const fetchActiveTheme = async () => {
     try {
       const response = await ThemesAPI.getActiveTheme();
-      setActiveTheme(response.data?.theme || null);
+      if (response.data?.theme) {
+        setActiveTheme(response.data.theme);
+      } else {
+        console.warn("No active theme found, using default theme.");
+        setActiveTheme(null);
+      }
     } catch (error) {
       console.error("Error fetching active theme:", error);
     }
@@ -77,19 +83,8 @@ const PostView = () => {
   };
 
   const handleLike = async () => {
-    // if (!post) return;
 
-    // const { error } = await supabase
-    //   .from("posts")
-    //   .update({ like_count: post.like_count + 1 })
-    //   .eq("id", post.id);
-
-    // if (error) {
-    //   toast.error("Failed to like post");
-    //   return;
-    // }
-
-    fetchPost();
+    // fetchPost();
   };
 
   const handleShare = async () => {
@@ -138,13 +133,13 @@ const PostView = () => {
     }
   }, [id]);
 
-  if (!post || !activeTheme) return null;
+  if (!post) return null;
 
   return (
     <div
       style={{
-        backgroundColor: activeTheme.backgroundColor,
-        color: activeTheme.textColor,
+        backgroundColor: activeTheme?.backgroundColor || "#f3f4f6",
+        color: activeTheme?.textColor || "#111827",
         minHeight: "100vh",
       }}
       onClick={showEmojiPicker ? () => setShowEmojiPicker(false) : undefined}
@@ -152,33 +147,45 @@ const PostView = () => {
       <div className="max-w-4xl mx-auto py-12 px-4">
         <article className="space-y-8">
           <h1 className="text-4xl font-bold">{post.title}</h1>
-
-          {post.mediaUrls?.map((url: string, index: number) => (
-            <img
-              key={index}
-              src={url}
-              alt={`Image ${index + 1}`}
-              className="w-full rounded-xl shadow-lg"
-              style={{ pointerEvents: "none" }}
-            />
-          ))}
-
           <div
             className="prose max-w-none"
-            style={{ color: activeTheme.textColor }}
+            style={{ color: activeTheme?.textColor }}
           >
             {post.content
               .split("\n")
               .map((paragraph: string, index: number) => (
-                <p key={index} className="mb-4">
+                <p key={index} className="mb-2">
                   {paragraph}
                 </p>
               ))}
           </div>
 
+          {post.media_urls?.map((media: any, index: number) => (
+            <div key={index}>
+              {media.content
+                .split("\n")
+                .map((paragraph: string, index: number) => (
+                  <p key={index} className="mb-2" style={{ color: activeTheme?.textColor }}>
+                    {paragraph}
+                  </p>
+                ))
+              }
+              <div className="h-96">
+                <img
+                  src={`${API_URL}/uploads/${media.url}`}
+                  alt={`Image ${index + 1}`}
+                  className="w-full rounded-xl shadow-lg object-cover h-full"
+                  style={{ pointerEvents: "none" }}
+                  crossOrigin="anonymous"
+                />
+              </div>
+            </div>
+          ))}
+
+
           <div
             className="flex items-center justify-between py-6 border-t border-b"
-            style={{ borderColor: activeTheme.secondaryColor }}
+            style={{ borderColor: activeTheme?.secondaryColor || "#e5e7eb" }}
           >
             <div className="flex items-center space-x-4">
               <button

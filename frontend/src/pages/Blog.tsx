@@ -8,6 +8,7 @@ import { StoreContext } from "../context/StoreContext";
 import { ThemesAPI } from "../services/API/Themes";
 import dayjs from 'dayjs';
 import 'dayjs/locale/fr';
+import { API_URL } from "../constants/API_URL";
 
 dayjs.locale('fr');
 
@@ -45,14 +46,13 @@ const Blog = () => {
       setActiveTheme(response.data?.theme || null);
     } catch (error) {
       console.error("Error fetching active theme:", error);
-      toast.error("Failed to fetch active theme");
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleLike = async (postId: string) => {
-    
+
     fetchPosts();
   };
 
@@ -100,9 +100,10 @@ const Blog = () => {
             >
               {post.media_urls?.[0] && (
                 <img
-                  src={post.media_urls[0]}
+                  src={`${API_URL}/uploads/${post.media_urls[0].url}`}
                   alt={post.title}
                   className="w-full h-64 object-cover"
+                  crossOrigin="anonymous"
                   style={{ pointerEvents: "none" }}
                 />
               )}
