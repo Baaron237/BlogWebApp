@@ -15,6 +15,20 @@ router.get("/", async (req, res) => {
   }
 });
 
+router.get("/activedTheme", async (req, res) => {
+  try {
+    const activeTheme = await Theme.findOne({
+      where: { isActive: true },
+    });
+    if (!activeTheme) {
+      return res.status(404).json({ error: "No active theme found" });
+    }
+    res.status(200).json({ theme: activeTheme });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 router.post("/", authenticateToken, isAdmin, async (req, res) => {
   try {
     const {
@@ -55,8 +69,6 @@ router.put("/:id", authenticateToken, isAdmin, async (req, res) => {
 
     if (isActive) {
       await Theme.update({ isActive: false }, { where: { isActive: true } });
-    } else {
-      await Theme.update({ isActive: true }, { where: { isActive: false } });
     }
 
     const theme = await Theme.findByPk(req.params.id);

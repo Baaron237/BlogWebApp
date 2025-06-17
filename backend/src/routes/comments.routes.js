@@ -9,7 +9,7 @@ router.get("/:postId", async (req, res) => {
       where: { postId: req.params.postId },
       order: [["createdAt", "DESC"]],
     });
-    res.json(comments);
+    res.status(200).json({ comments });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -22,8 +22,9 @@ router.post("/", async (req, res) => {
 
     await Post.increment("commentCount", { where: { id: postId } });
 
-    res.status(201).json(comment);
+    res.status(201).json({ comment });
   } catch (error) {
+    console.error("Error creating comment:", error);
     res.status(500).json({ error: error.message });
   }
 });
