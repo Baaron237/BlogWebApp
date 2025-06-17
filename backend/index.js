@@ -28,7 +28,7 @@ app.use(cors());
 app.use(helmet());
 app.use(morgan("dev"));
 app.use(express.json());
-app.use("/uploads", express.static(path.join(__dirname, "public/uploads")));
+app.use("/uploads", express.static(path.join(__dirname, "src/public/uploads")));
 
 // Routes
 app.use("/api/analytics", analyticsRoutes);

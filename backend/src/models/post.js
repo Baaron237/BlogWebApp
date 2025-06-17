@@ -17,10 +17,6 @@ export default class Post extends Model {
           type: DataTypes.TEXT,
           allowNull: false,
         },
-        mediaUrls: {
-          type: DataTypes.JSON,
-          defaultValue: [],
-        },
         viewCount: {
           type: DataTypes.INTEGER,
           defaultValue: 0,
