@@ -11,26 +11,23 @@ const MediaLibrary = () => {
   }, []);
 
   const fetchMedia = async () => {
-    const { data, error } = await supabase.storage.from("media").list();
-
-    if (error) {
-      toast.error("Failed to fetch media");
-      return;
-    }
-
-    const mediaUrls = await Promise.all(
-      data.map(async (file) => {
-        const {
-          data: { publicUrl },
-        } = supabase.storage.from("media").getPublicUrl(file.name);
-        return {
-          ...file,
-          url: publicUrl,
-        };
-      })
-    );
-
-    setMedia(mediaUrls);
+    // const { data, error } = await supabase.storage.from("media").list();
+    // if (error) {
+    //   toast.error("Failed to fetch media");
+    //   return;
+    // }
+    // const mediaUrls = await Promise.all(
+    //   data.map(async (file) => {
+    //     const {
+    //       data: { publicUrl },
+    //     } = supabase.storage.from("media").getPublicUrl(file.name);
+    //     return {
+    //       ...file,
+    //       url: publicUrl,
+    //     };
+    //   })
+    // );
+    // setMedia(mediaUrls);
   };
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -43,13 +40,13 @@ const MediaLibrary = () => {
         const fileName = `${Math.random()}.${fileExt}`;
         const filePath = `${fileName}`;
 
-        const { error: uploadError } = await supabase.storage
-          .from("media")
-          .upload(filePath, file);
+        // const { error: uploadError } = await supabase.storage
+        //   .from("media")
+        //   .upload(filePath, file);
 
-        if (uploadError) {
-          throw uploadError;
-        }
+        // if (uploadError) {
+        //   throw uploadError;
+        // }
       }
 
       toast.success("Media uploaded successfully");
@@ -62,12 +59,12 @@ const MediaLibrary = () => {
   };
 
   const handleDelete = async (fileName: string) => {
-    const { error } = await supabase.storage.from("media").remove([fileName]);
+    // const { error } = await supabase.storage.from("media").remove([fileName]);
 
-    if (error) {
-      toast.error("Failed to delete media");
-      return;
-    }
+    // if (error) {
+    //   toast.error("Failed to delete media");
+    //   return;
+    // }
 
     toast.success("Media deleted successfully");
     fetchMedia();

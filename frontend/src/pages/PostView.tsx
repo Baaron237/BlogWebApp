@@ -1,19 +1,153 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useContext, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { ThumbsUp, Share2, Smile } from "lucide-react";
+import { ThumbsUp, Share2, Smile, Send } from "lucide-react";
 import toast from "react-hot-toast";
 import { PostsAPI } from "../services/API/Posts";
 import { CommentsAPI } from "../services/API/Comments";
 import { ThemesAPI } from "../services/API/Themes";
-import dayjs from 'dayjs';
-import 'dayjs/locale/fr';
+import dayjs from "dayjs";
+import "dayjs/locale/fr";
 import { StoreContext } from "../context/StoreContext";
 import { API_URL } from "../constants/API_URL";
 
-dayjs.locale('fr');
+dayjs.locale("fr");
 
-const EMOJI_LIST = ["👍", "❤️", "😊", "🎉", "👏", "🔥", "💯", "🙌"];
+const EMOJI_LIST = [
+  "👍",
+  "❤️",
+  "😊",
+  "🎉",
+  "👏",
+  "🔥",
+  "💯",
+  "🙌",
+  "😂",
+  "😍",
+  "🤔",
+  "😢",
+  "🎵",
+  "🌟",
+  "🥳",
+  "😎",
+  "🤗",
+  "😴",
+  "😭",
+  "😡",
+  "🤓",
+  "😱",
+  "🤯",
+  "😴",
+  "🤮",
+  "🤠",
+  "😷",
+  "🤢",
+  "😳",
+  "🥺",
+  "🙄",
+  "😬",
+  "🤥",
+  "😶",
+  "😐",
+  "😕",
+  "😏",
+  "😚",
+  "😋",
+  "😜",
+  "🤪",
+  "😝",
+  "🤤",
+  "😈",
+  "👿",
+  "👹",
+  "💀",
+  "☠️",
+  "👽",
+  "🤖",
+  "🎃",
+  "👻",
+  "🦇",
+  "🕷️",
+  "🌹",
+  "💐",
+  "🌷",
+  "🌸",
+  "🌺",
+  "🌼",
+  "🌻",
+  "🍎",
+  "🍌",
+  "🍇",
+  "🍓",
+  "🍕",
+  "🍔",
+  "🍟",
+  "🌮",
+  "🍣",
+  "🍩",
+  "🎂",
+  "🍰",
+  "☕",
+  "🍺",
+  "🍷",
+  "🍹",
+  "🎧",
+  "📱",
+  "💻",
+  "🎮",
+  "📸",
+  "🎬",
+  "🎤",
+  "🎸",
+  "🎹",
+  "🎻",
+  "🏀",
+  "⚽",
+  "🏈",
+  "🏊",
+  "🏋️",
+  "🚗",
+  "🚀",
+  "✈️",
+  "⛵",
+  "🏝️",
+  "🌍",
+  "🌕",
+  "🌞",
+  "🌝",
+  "🌈",
+  "⚡",
+  "💥",
+  "⭐",
+  "🌟",
+  "💫",
+  "💧",
+  "🔥",
+  "💨",
+  "❄️",
+  "🌬️",
+  "🍂",
+  "🍁",
+  "🎄",
+  "🎅",
+  "🔔",
+  "🎁",
+  "🎆",
+  "🎇",
+  "💖",
+  "💕",
+  "💞",
+  "💓",
+  "💗",
+  "💙",
+  "💚",
+  "💛",
+  "💜",
+  "🖤",
+  "💔",
+  "💌",
+  "💍",
+  "💎",
+];
 
 type Post = {
   id: string;
@@ -27,19 +161,19 @@ type Post = {
 };
 
 type Theme = {
-    backgroundColor: string;
-    textColor: string;
-    secondaryColor?: string;
-    [key: string]: any;
-  };
+  backgroundColor: string;
+  textColor: string;
+  secondaryColor?: string;
+  [key: string]: any;
+};
 
 const PostView = () => {
   const { id } = useParams();
   const [post, setPost] = useState<Post | null>(null);
   const [activeTheme, setActiveTheme] = useState<Theme | null>(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const [comments, setComments] = useState([]);
-
+  const [comments, setComments] = useState<any[]>([]);
+  const [commentText, setCommentText] = useState("");
 
   const fetchPost = async () => {
     try {
@@ -51,7 +185,7 @@ const PostView = () => {
   };
 
   const fetchComments = async () => {
-     try {
+    try {
       const response = await CommentsAPI.getAllComments(id!);
       setComments(response.data.comments || []);
     } catch (error) {
@@ -83,7 +217,6 @@ const PostView = () => {
   };
 
   const handleLike = async () => {
-
     // fetchPost();
   };
 
@@ -103,17 +236,18 @@ const PostView = () => {
     }
   };
 
-  const addComment = async (emoji: string) => {
+  const addComment = async (emoji?: string) => {
     try {
       await CommentsAPI.createComment({
         postId: id,
+        text: commentText || undefined,
         emoji: emoji,
       });
 
       fetchComments();
       setShowEmojiPicker(false);
+      setCommentText("");
       toast.success("Comment added!");
-
     } catch (error) {
       console.error("Error adding comment:", error);
       toast.error("Failed to add comment");
@@ -121,7 +255,7 @@ const PostView = () => {
   };
 
   const formatDate = (dateString: Date) => {
-    return dayjs(dateString).format('D MMMM YYYY');
+    return dayjs(dateString).format("D MMMM YYYY");
   };
 
   useEffect(() => {
@@ -160,16 +294,19 @@ const PostView = () => {
               ))}
           </div>
 
-          {post.media_urls?.map((media: any, index: number) => (
+          {post.mediaUrls?.map((media: any, index: number) => (
             <div key={index}>
               {media.content
                 .split("\n")
                 .map((paragraph: string, index: number) => (
-                  <p key={index} className="mb-2" style={{ color: activeTheme?.textColor }}>
+                  <p
+                    key={index}
+                    className="mb-2"
+                    style={{ color: activeTheme?.textColor }}
+                  >
                     {paragraph}
                   </p>
-                ))
-              }
+                ))}
               <div className="h-96">
                 <img
                   src={`${API_URL}/uploads/${media.url}`}
@@ -181,7 +318,6 @@ const PostView = () => {
               </div>
             </div>
           ))}
-
 
           <div
             className="flex items-center justify-between py-6 border-t border-b"
@@ -206,7 +342,7 @@ const PostView = () => {
                 </button>
 
                 {showEmojiPicker && (
-                  <div className="absolute w-44 top-full left-0 mt-2 p-2 bg-white rounded-lg shadow-xl grid grid-cols-4 gap-2">
+                  <div className="absolute w-44 top-full left-0 mt-2 p-2 bg-white rounded-lg shadow-xl grid grid-cols-4 gap-2 overflow-y-auto max-h-64">
                     {EMOJI_LIST.map((emoji) => (
                       <button
                         key={emoji}
@@ -232,7 +368,7 @@ const PostView = () => {
             <div className="flex items-center space-x-2 text-sm opacity-75">
               <span>{post.viewCount} views</span>
               <span>•</span>
-              <span>{formatDate(post.created_at)}</span>
+              <span>{formatDate(post.createdAt)}</span>
             </div>
           </div>
 
@@ -244,9 +380,36 @@ const PostView = () => {
                   key={comment.id}
                   className="text-2xl bg-white bg-opacity-10 rounded-full w-12 h-12 flex items-center justify-center"
                 >
-                  {comment.emoji}
+                  {comment.emoji || comment.text}
                 </div>
               ))}
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <textarea
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                placeholder="Add a comment..."
+                className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                style={{
+                  color: activeTheme?.textColor,
+                  backgroundColor: activeTheme?.backgroundColor || "#f3f4f6",
+                }}
+                rows={2}
+              />
+              <button
+                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                className="hover:opacity-75"
+              >
+                <Smile className="w-6 h-6" />
+              </button>
+              <button
+                onClick={() => addComment()}
+                className="bg-purple-600 text-white p-2 rounded-lg hover:bg-purple-700 transition-colors"
+                disabled={!commentText && !showEmojiPicker}
+              >
+                <Send className="w-6 h-6" />
+              </button>
             </div>
           </div>
         </article>
