@@ -167,11 +167,19 @@ type Theme = {
   [key: string]: any;
 };
 
+type Reaction = {
+  emoji: string;
+  count: number;
+};
+
 const PostView = () => {
   const { id } = useParams();
   const [post, setPost] = useState<Post | null>(null);
   const [activeTheme, setActiveTheme] = useState<Theme | null>(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [showCommentEmojiPicker, setShowCommentEmojiPicker] = useState(false);
+  const [showReactionDetails, setShowReactionDetails] = useState(false);
+  const [reactions, setReactions] = useState<Reaction[]>([]);
   const [comments, setComments] = useState<any[]>([]);
   const [commentText, setCommentText] = useState("");
 
@@ -190,6 +198,15 @@ const PostView = () => {
       setComments(response.data.comments || []);
     } catch (error) {
       console.error("Error fetching comments:", error);
+    }
+  };
+
+  const fetchReactions = async () => {
+    try {
+      const response = await PostsAPI.getReactions(id!);
+      setReactions(response.data.reactions || []);
+    } catch (error) {
+      console.error("Error fetching reactions:", error);
     }
   };
 
@@ -236,7 +253,19 @@ const PostView = () => {
     }
   };
 
-  const handleEmojiSelect = (emoji: string) => {
+  const handleEmojiSelect = async (emoji: string) => {
+    try {
+      await PostsAPI.addReaction(id!, emoji);
+      fetchReactions();
+      setShowEmojiPicker(false);
+      toast.success("Reaction added!");
+    } catch (error) {
+      console.error("Error adding reaction:", error);
+      toast.error("Failed to add reaction");
+    }
+  };
+
+  const handleCommentEmojiSelect = (emoji: string) => {
     setCommentText((prev) => prev + emoji);
   };
 
@@ -253,8 +282,8 @@ const PostView = () => {
       });
 
       fetchComments();
-      setShowEmojiPicker(false);
       setCommentText("");
+      setShowCommentEmojiPicker(false);
       toast.success("Comment added!");
     } catch (error) {
       console.error("Error adding comment:", error);
@@ -270,12 +299,18 @@ const PostView = () => {
     if (id) {
       fetchPost();
       fetchComments();
+      fetchReactions();
       fetchActiveTheme();
       incrementViewCount();
     }
   }, [id]);
 
   if (!post) return null;
+
+  const totalReactions = reactions.reduce(
+    (sum, reaction) => sum + reaction.count,
+    0
+  );
 
   return (
     <div
@@ -284,7 +319,15 @@ const PostView = () => {
         color: activeTheme?.textColor || "#111827",
         minHeight: "100vh",
       }}
-      onClick={showEmojiPicker ? () => setShowEmojiPicker(false) : undefined}
+      onClick={
+        showEmojiPicker || showCommentEmojiPicker || showReactionDetails
+          ? () => {
+              setShowEmojiPicker(false);
+              setShowCommentEmojiPicker(false);
+              setShowReactionDetails(false);
+            }
+          : undefined
+      }
     >
       <div className="max-w-4xl mx-auto py-12 px-4">
         <article className="space-y-8">
@@ -342,11 +385,15 @@ const PostView = () => {
 
               <div className="relative">
                 <button
-                  onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                  onClick={() => {
+                    setShowEmojiPicker(!showEmojiPicker);
+                    setShowReactionDetails(false);
+                    setShowCommentEmojiPicker(false);
+                  }}
                   className="flex items-center space-x-2 hover:opacity-75"
                 >
                   <Smile className="w-6 h-6" />
-                  <span>{comments.length}</span>
+                  <span>{totalReactions}</span>
                 </button>
 
                 {showEmojiPicker && (
@@ -360,6 +407,24 @@ const PostView = () => {
                         {emoji}
                       </button>
                     ))}
+                  </div>
+                )}
+
+                {showReactionDetails && (
+                  <div className="absolute w-44 top-full left-0 mt-2 p-2 bg-white rounded-lg shadow-xl">
+                    {reactions.length > 0 ? (
+                      reactions.map((reaction) => (
+                        <div
+                          key={reaction.emoji}
+                          className="flex items-center justify-between text-lg"
+                        >
+                          <span>{reaction.emoji}</span>
+                          <span>{reaction.count}</span>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-sm text-gray-500">No reactions yet</p>
+                    )}
                   </div>
                 )}
               </div>
@@ -380,15 +445,26 @@ const PostView = () => {
             </div>
           </div>
 
+          <div className="flex flex-wrap gap-2 mb-4">
+            {reactions.map((reaction) => (
+              <div
+                key={reaction.emoji}
+                className="text-xl bg-white bg-opacity-10 rounded-full w-10 h-10 flex items-center justify-center"
+              >
+                {reaction.emoji}
+              </div>
+            ))}
+          </div>
+
           <div className="space-y-4">
             <h3 className="text-xl font-semibold">Comments</h3>
             <div className="flex flex-wrap gap-2">
               {comments.map((comment: any) => (
                 <div
                   key={comment.id}
-                  className="text-2xl bg-white bg-opacity-10 rounded-full w-12 h-12 flex items-center justify-center"
+                  className="text-lg bg-white bg-opacity-10 rounded-lg p-2"
                 >
-                  {comment.emoji || comment.text}
+                  {comment.text}
                 </div>
               ))}
             </div>
@@ -405,12 +481,31 @@ const PostView = () => {
                 }}
                 rows={2}
               />
-              <button
-                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                className="hover:opacity-75"
-              >
-                <Smile className="w-6 h-6" />
-              </button>
+              <div className="relative">
+                <button
+                  onClick={() => {
+                    setShowCommentEmojiPicker(!showCommentEmojiPicker);
+                    setShowEmojiPicker(false);
+                    setShowReactionDetails(false);
+                  }}
+                  className="hover:opacity-75"
+                >
+                  <Smile className="w-6 h-6" />
+                </button>
+                {showCommentEmojiPicker && (
+                  <div className="absolute w-44 top-full right-0 mt-2 p-2 bg-white rounded-lg shadow-xl grid grid-cols-4 gap-2 overflow-y-auto max-h-64">
+                    {EMOJI_LIST.map((emoji) => (
+                      <button
+                        key={emoji}
+                        onClick={() => handleCommentEmojiSelect(emoji)}
+                        className="text-2xl hover:scale-125 transition-transform"
+                      >
+                        {emoji}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
               <button
                 onClick={addComment}
                 className="bg-purple-600 text-white p-2 rounded-lg hover:bg-purple-700 transition-colors"
