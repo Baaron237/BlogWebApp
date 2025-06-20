@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Lock, User, X } from "lucide-react";
@@ -18,8 +19,7 @@ const AuthPage = () => {
     confirmPassword: "",
   });
 
-  const { setUser, isLoading, setIsLoading, setToken } =
-    useContext(StoreContext);
+  const { setUser, isLoading, setIsLoading, setToken } = useContext(StoreContext);
 
   const validateEmail = (email: string) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -37,13 +37,15 @@ const AuthPage = () => {
 
       setUser(response.data.user);
       setToken(response.data.token);
-      toast.success("Login successful!");
       setIsAdmin(response.data.user.isAdmin);
       setShowGuestModal(false);
+      toast.success("Login successful!");
       navigate(response.data.user.isAdmin ? "/dashboard" : "/blog");
+
     } catch (error) {
       toast.error("Login failed. Please check your credentials.");
       console.error("Login error:", error);
+
     } finally {
       setIsLoading(false);
     }
@@ -66,18 +68,31 @@ const AuthPage = () => {
     }
 
     try {
-      const response = await AuthAPI.signup({
+      await AuthAPI.signup({
         username: credentials.username,
         email: credentials.email,
         password: credentials.password,
       });
 
       toast.success("Account created successfully! Please log in.");
+  
+      setCredentials({ 
+        username: "", 
+        email: "",
+        password: "", 
+        confirmPassword: "" 
+      });
+
       setIsSignup(false);
-      setCredentials({ ...credentials, password: "", confirmPassword: "" });
-    } catch (error) {
-      toast.error("Signup failed. Please try again.");
+
+    } catch (error: any) {
+      if (error.response && error.response.data) {
+        toast.error(error.response.data.error);
+      } else {
+        toast.error("Signup failed. Please try again.");
+      }
       console.error("Signup error:", error);
+
     } finally {
       setIsLoading(false);
     }

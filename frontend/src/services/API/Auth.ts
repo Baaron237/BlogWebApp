@@ -5,4 +5,8 @@ export class AuthAPI {
   static login = (body: Record<string, any>) => {
     return Axios.post("/auth/login", body);
   };
+
+  static signup = (body: Record<string, any>) => {
+    return Axios.post("/auth/register", body);
+  };
 }
