@@ -1,12 +1,18 @@
-import React, { useContext } from 'react';
-import { Routes, Route, Link, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Image, Palette, BarChart3, LogOut } from 'lucide-react';
+import React, { useContext } from "react";
+import { Routes, Route, Link, useNavigate } from "react-router-dom";
+import {
+  LayoutDashboard,
+  User,
+  Palette,
+  BarChart3,
+  LogOut,
+} from "lucide-react";
 
-import Analytics from '../components/dashboard/Analytics';
-import PostManager from '../components/dashboard/PostManager';
-import ThemeEditor from '../components/dashboard/ThemeEditor';
-import MediaLibrary from '../components/dashboard/MediaLibrary';
-import { StoreContext } from '../context/StoreContext';
+import Analytics from "../components/dashboard/Analytics";
+import PostManager from "../components/dashboard/PostManager";
+import ThemeEditor from "../components/dashboard/ThemeEditor";
+import UserAccounts from "../components/dashboard/UserAccounts";
+import { StoreContext } from "../context/StoreContext";
 
 const Dashboard = () => {
   const { logout } = useContext(StoreContext);
@@ -14,8 +20,8 @@ const Dashboard = () => {
 
   const handleLogout = () => {
     logout();
-    navigate('/');
-  }
+    navigate("/");
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
@@ -40,11 +46,11 @@ const Dashboard = () => {
             Posts
           </Link>
           <Link
-            to="/dashboard/media"
+            to="/dashboard/useraccounts"
             className="flex items-center px-6 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600"
           >
-            <Image className="w-5 h-5 mr-3" />
-            Media
+            <User className="w-5 h-5 mr-3" />
+            UserAccounts
           </Link>
           <Link
             to="/dashboard/themes"
@@ -68,7 +74,7 @@ const Dashboard = () => {
         <Routes>
           <Route path="/" element={<Analytics />} />
           <Route path="/posts/*" element={<PostManager />} />
-          <Route path="/media" element={<MediaLibrary />} />
+          <Route path="/useraccounts" element={<UserAccounts />} />
           <Route path="/themes" element={<ThemeEditor />} />
         </Routes>
       </div>
