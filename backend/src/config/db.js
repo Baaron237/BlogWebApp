@@ -31,6 +31,7 @@ const dbConnection = async () => {
       // Creating the default admin user
       await User.create({
         username: process.env.ADMIN_USERNAME,
+        email: process.env.ADMIN_EMAIL,
         password: hashedPassword,
         isAdmin: true,
       });
