@@ -1,15 +1,64 @@
 import React, { useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Lock, X } from "lucide-react";
+import { Lock, X, Smile, ChevronDown } from "lucide-react";
 import toast from "react-hot-toast";
 import { motion } from "framer-motion";
 import { StoreContext } from "../context/StoreContext";
 import { AuthAPI } from "../services/API/Auth";
 
+const EMOJI_LIST = [
+  "😊",
+  "👍",
+  "❤️",
+  "🎉",
+  "😎",
+  "🌟",
+  "🥳",
+  "😂",
+  "😍",
+  "🤗",
+  "🔥",
+  "💯",
+  "🙌",
+  "😜",
+  "🤓",
+  "😢",
+  "🎵",
+  "🌈",
+  "⚡",
+  "⭐",
+  "💫",
+  "🍎",
+  "🍕",
+  "☕",
+  "🎸",
+  "🏀",
+  "🚀",
+  "🌍",
+  "🎄",
+  "🎁",
+  "💖",
+  "💙",
+];
+
+const FONTS = [
+  { name: "Lobster", value: "'Lobster', cursive" },
+  { name: "Amatic SC", value: "'Amatic SC', cursive" },
+  { name: "Shadows Into Light", value: "'Shadows Into Light', cursive" },
+  { name: "Bangers", value: "'Bangers', cursive" },
+  { name: "Satisfy", value: "'Satisfy', cursive" },
+  { name: "Roboto", value: "'Roboto', sans-serif" },
+  { name: "Poppins", value: "'Poppins', sans-serif" },
+  { name: "Nunito", value: "'Nunito', sans-serif" },
+];
+
 const AuthPage = () => {
   const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
   const [isSignup, setIsSignup] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [showFontMenu, setShowFontMenu] = useState(false);
+  const [selectedFont, setSelectedFont] = useState(FONTS[0].value);
   const [credentials, setCredentials] = useState({
     username: "",
     password: "",
@@ -22,6 +71,16 @@ const AuthPage = () => {
 
   const validateEmail = (email: string) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  };
+
+  const handleEmojiSelect = (emoji: string) => {
+    setCredentials({ ...credentials, username: credentials.username + emoji });
+    setShowEmojiPicker(false);
+  };
+
+  const handleFontSelect = (font: string) => {
+    setSelectedFont(font);
+    setShowFontMenu(false);
   };
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -96,6 +155,11 @@ const AuthPage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center p-4">
+      <link
+        href="https://fonts.googleapis.com/css2?family=Amatic+SC&family=Bangers&family=Lobster&family=Roboto&family=Poppins&family=Nunito&family=Satisfy&family=Shadows+Into+Light&display=swap"
+        rel="stylesheet"
+      />
+
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -149,15 +213,68 @@ const AuthPage = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Username
                 </label>
-                <input
-                  type="text"
-                  value={credentials.username}
-                  onChange={(e) =>
-                    setCredentials({ ...credentials, username: e.target.value })
-                  }
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  required
-                />
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="text"
+                    value={credentials.username}
+                    onChange={(e) =>
+                      setCredentials({
+                        ...credentials,
+                        username: e.target.value,
+                      })
+                    }
+                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    style={{ fontFamily: selectedFont }}
+                    required
+                  />
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                      className="p-2 hover:bg-gray-100 rounded-full"
+                    >
+                      <Smile className="w-5 h-5" />
+                    </button>
+                    {showEmojiPicker && (
+                      <div className="absolute w-44 top-full right-0 mt-2 p-2 bg-white rounded-lg shadow-xl grid grid-cols-4 gap-2 overflow-y-auto max-h-64 z-10">
+                        {EMOJI_LIST.map((emoji) => (
+                          <button
+                            key={emoji}
+                            type="button"
+                            onClick={() => handleEmojiSelect(emoji)}
+                            className="text-2xl hover:scale-125 transition-transform"
+                          >
+                            {emoji}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setShowFontMenu(!showFontMenu)}
+                      className="p-2 hover:bg-gray-100 rounded-full flex items-center"
+                    >
+                      <ChevronDown className="w-5 h-5" />
+                    </button>
+                    {showFontMenu && (
+                      <div className="absolute w-40 top-full right-0 mt-2 p-2 bg-white rounded-lg shadow-xl flex flex-col gap-1 z-10">
+                        {FONTS.map((font) => (
+                          <button
+                            key={font.name}
+                            type="button"
+                            onClick={() => handleFontSelect(font.value)}
+                            className="text-left px-2 py-1 hover:bg-gray-100 rounded"
+                            style={{ fontFamily: font.value }}
+                          >
+                            {font.name}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
 
               {isSignup && (

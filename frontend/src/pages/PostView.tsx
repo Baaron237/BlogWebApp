@@ -183,6 +183,13 @@ type Reaction = {
   count: number;
 };
 
+type Comment = {
+  id: string;
+  text: string;
+  username: string;
+  isAdmin: boolean;
+};
+
 const PostView = () => {
   const { id } = useParams();
   const [post, setPost] = useState<Post | null>(null);
@@ -192,7 +199,7 @@ const PostView = () => {
   const [showReactionDetails, setShowReactionDetails] = useState(false);
   const [showShareMenu, setShowShareMenu] = useState(false);
   const [reactions, setReactions] = useState<Reaction[]>([]);
-  const [comments, setComments] = useState<any[]>([]);
+  const [comments, setComments] = useState<Comment[]>([]);
   const [commentText, setCommentText] = useState("");
 
   const fetchPost = async () => {
@@ -567,13 +574,23 @@ const PostView = () => {
 
           <div className="space-y-4">
             <h3 className="text-xl font-semibold">Comments</h3>
-            <div className="flex flex-wrap gap-2">
-              {comments.map((comment: any) => (
+            <div className="flex flex-col gap-4">
+              {comments.map((comment) => (
                 <div
                   key={comment.id}
-                  className="text-lg bg-white bg-opacity-10 rounded-lg p-2"
+                  className="bg-white bg-opacity-10 rounded-lg p-4"
                 >
-                  {comment.text}
+                  <div className="flex items-center space-x-2 mb-2">
+                    <span className="text-lg font-medium text-gray-800">
+                      {comment.username}
+                    </span>
+                    {comment.isAdmin && (
+                      <span className="text-sm bg-purple-600 text-white px-2 py-1 rounded-full">
+                        Propriétaire
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-lg">{comment.text}</p>
                 </div>
               ))}
             </div>
