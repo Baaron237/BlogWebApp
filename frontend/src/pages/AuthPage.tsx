@@ -1,7 +1,6 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Lock, User, X } from "lucide-react";
+import { Lock, X } from "lucide-react";
 import toast from "react-hot-toast";
 import { motion } from "framer-motion";
 import { StoreContext } from "../context/StoreContext";
@@ -9,8 +8,7 @@ import { AuthAPI } from "../services/API/Auth";
 
 const AuthPage = () => {
   const navigate = useNavigate();
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [showGuestModal, setShowGuestModal] = useState(false);
+  const [showModal, setShowModal] = useState(false);
   const [isSignup, setIsSignup] = useState(false);
   const [credentials, setCredentials] = useState({
     username: "",
@@ -19,7 +17,8 @@ const AuthPage = () => {
     confirmPassword: "",
   });
 
-  const { setUser, isLoading, setIsLoading, setToken } = useContext(StoreContext);
+  const { setUser, isLoading, setIsLoading, setToken } =
+    useContext(StoreContext);
 
   const validateEmail = (email: string) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -37,15 +36,12 @@ const AuthPage = () => {
 
       setUser(response.data.user);
       setToken(response.data.token);
-      setIsAdmin(response.data.user.isAdmin);
-      setShowGuestModal(false);
+      setShowModal(false);
       toast.success("Login successful!");
       navigate(response.data.user.isAdmin ? "/dashboard" : "/blog");
-
     } catch (error) {
       toast.error("Login failed. Please check your credentials.");
       console.error("Login error:", error);
-
     } finally {
       setIsLoading(false);
     }
@@ -75,16 +71,13 @@ const AuthPage = () => {
       });
 
       toast.success("Account created successfully! Please log in.");
-  
-      setCredentials({ 
-        username: "", 
+      setCredentials({
+        username: "",
         email: "",
-        password: "", 
-        confirmPassword: "" 
+        password: "",
+        confirmPassword: "",
       });
-
       setIsSignup(false);
-
     } catch (error: any) {
       if (error.response && error.response.data) {
         toast.error(error.response.data.error);
@@ -92,14 +85,13 @@ const AuthPage = () => {
         toast.error("Signup failed. Please try again.");
       }
       console.error("Signup error:", error);
-
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleGuestClick = () => {
-    setShowGuestModal(true);
+  const handleConnectClick = () => {
+    setShowModal(true);
   };
 
   return (
@@ -116,83 +108,16 @@ const AuthPage = () => {
 
         <div className="space-y-4 mb-8">
           <button
-            onClick={() => setIsAdmin(true)}
-            className={`w-full py-3 px-4 rounded-lg flex items-center justify-center space-x-2 transition-colors ${
-              isAdmin
-                ? "bg-purple-600 text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-            }`}
+            onClick={handleConnectClick}
+            className="w-full py-3 px-4 rounded-lg flex items-center justify-center space-x-2 transition-colors bg-purple-600 text-white hover:bg-purple-700"
           >
             <Lock className="w-5 h-5" />
-            <span>Admin Access</span>
-          </button>
-
-          <button
-            onClick={() => setIsAdmin(false)}
-            className={`w-full py-3 px-4 rounded-lg flex items-center justify-center space-x-2 transition-colors ${
-              !isAdmin
-                ? "bg-blue-600 text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-            }`}
-          >
-            <User className="w-5 h-5" />
-            <span>Guest Access</span>
+            <span>Connect</span>
           </button>
         </div>
-
-        {isAdmin && (
-          <form onSubmit={handleLogin} className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Username
-              </label>
-              <input
-                type="text"
-                value={credentials.username}
-                onChange={(e) =>
-                  setCredentials({ ...credentials, username: e.target.value })
-                }
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Password
-              </label>
-              <input
-                type="password"
-                value={credentials.password}
-                onChange={(e) =>
-                  setCredentials({ ...credentials, password: e.target.value })
-                }
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                required
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full bg-purple-600 text-white py-2 rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50"
-            >
-              {isLoading ? "Logging in..." : "Login"}
-            </button>
-          </form>
-        )}
-
-        {!isAdmin && (
-          <button
-            onClick={handleGuestClick}
-            className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            Continue as Guest
-          </button>
-        )}
       </motion.div>
 
-      {showGuestModal && (
+      {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
@@ -201,17 +126,22 @@ const AuthPage = () => {
             className="bg-white rounded-xl shadow-xl p-8 w-full max-w-md relative"
           >
             <button
-              onClick={() => setShowGuestModal(false)}
+              onClick={() => setShowModal(false)}
               className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
             >
               <X className="w-6 h-6" />
             </button>
 
             <h2 className="text-2xl font-bold text-center mb-6">
-              {isSignup ? "Create Account" : "Login as Guest"}
+              {isSignup ? "Create Account" : "Connect"}
             </h2>
 
-            <form
+            <motion.form
+              key={isSignup ? "signup" : "login"}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
               onSubmit={isSignup ? handleSignup : handleLogin}
               className="space-y-6"
             >
@@ -290,12 +220,12 @@ const AuthPage = () => {
                 {isLoading
                   ? isSignup
                     ? "Creating..."
-                    : "Logging in..."
+                    : "Connecting..."
                   : isSignup
                   ? "Create Account"
-                  : "Login"}
+                  : "Connect"}
               </button>
-            </form>
+            </motion.form>
 
             <div className="mt-4 text-center">
               <button
@@ -303,7 +233,7 @@ const AuthPage = () => {
                 className="text-purple-600 hover:text-purple-700 text-sm"
               >
                 {isSignup
-                  ? "Already have an account? Login"
+                  ? "Already have an account? Connect"
                   : "Don’t have an account? Sign up"}
               </button>
             </div>
