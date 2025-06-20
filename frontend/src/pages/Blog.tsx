@@ -23,6 +23,7 @@ const Blog = () => {
   const [posts, setPosts] = useState([]);
   const [activeTheme, setActiveTheme] = useState<Theme | null>(null);
   const { isLoading, setIsLoading, token } = useContext(StoreContext);
+  const [isLiked, setIsLiked] = useState(false);
 
   
 
@@ -51,10 +52,15 @@ const Blog = () => {
     }
   };
 
-  const handleLike = async (postId: string) => {
-
-    fetchPosts();
-  };
+  const handleLike = async (id: string) => {
+      try {
+        const response = await PostsAPI.likePost(id!, token!);
+        setIsLiked(response.data.liked);
+        fetchPosts();
+      } catch (error) {
+        console.error("Error liking post:", error);
+      }
+    };
 
   const handleShare = async (post: any) => {
     const shareData = {
@@ -121,7 +127,9 @@ const Blog = () => {
                       onClick={() => handleLike(post.id)}
                       className="flex items-center space-x-1 text-gray-600 hover:text-blue-600"
                     >
-                      <ThumbsUp className="w-5 h-5" />
+                      <ThumbsUp
+                        className={`w-6 h-6 ${isLiked ? "text-blue-600" : ""}`}
+                      />
                       <span>{post.likeCount || 0}</span>
                     </button>
 

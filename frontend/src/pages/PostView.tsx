@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useContext, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import {
@@ -18,8 +19,9 @@ import { CommentsAPI } from "../services/API/Comments";
 import { ThemesAPI } from "../services/API/Themes";
 import dayjs from "dayjs";
 import "dayjs/locale/fr";
-import { StoreContext } from "../context/StoreContext";
 import { API_URL } from "../constants/API_URL";
+import { Post, Theme, Reaction } from "../types";
+import { StoreContext } from "../context/StoreContext";
 
 dayjs.locale("fr");
 
@@ -160,29 +162,6 @@ const EMOJI_LIST = [
   "💎",
 ];
 
-type Post = {
-  id: string;
-  title: string;
-  content: string;
-  mediaUrls?: string[];
-  likeCount: number;
-  viewCount: number;
-  createdAt: string;
-  [key: string]: any;
-};
-
-type Theme = {
-  backgroundColor: string;
-  textColor: string;
-  secondaryColor?: string;
-  [key: string]: any;
-};
-
-type Reaction = {
-  emoji: string;
-  count: number;
-};
-
 const PostView = () => {
   const { id } = useParams();
   const [post, setPost] = useState<Post | null>(null);
@@ -194,10 +173,12 @@ const PostView = () => {
   const [reactions, setReactions] = useState<Reaction[]>([]);
   const [comments, setComments] = useState<any[]>([]);
   const [commentText, setCommentText] = useState("");
+  const [isLiked, setIsLiked] = useState(false);
+  const { token } = useContext(StoreContext)
 
   const fetchPost = async () => {
     try {
-      const response = await PostsAPI.getOnePost(id!);
+      const response = await PostsAPI.getOnePost(id!, token!);
       setPost(response.data.post || {});
     } catch (error) {
       console.error("Error fetching post:", error);
@@ -236,17 +217,15 @@ const PostView = () => {
     }
   };
 
-  const incrementViewCount = async () => {
-    try {
-      await PostsAPI.incrementViewPost(id!);
-      fetchPost();
-    } catch (error) {
-      console.error("Error increment view:", error);
-    }
-  };
 
   const handleLike = async () => {
-    // fetchPost();
+    try {
+      const response = await PostsAPI.likePost(id!, token!);
+      setIsLiked(response.data.liked);
+      fetchPost();
+    } catch (error) {
+      console.error("Error liking post:", error);
+    }
   };
 
   const handleShare = (platform: string) => {
@@ -327,8 +306,8 @@ const PostView = () => {
     try {
       await CommentsAPI.createComment({
         postId: id,
-        text: commentText,
-      });
+        message: commentText,
+      }, token);
 
       fetchComments();
       setCommentText("");
@@ -350,7 +329,6 @@ const PostView = () => {
       fetchComments();
       fetchReactions();
       fetchActiveTheme();
-      incrementViewCount();
     }
   }, [id]);
 
@@ -432,7 +410,10 @@ const PostView = () => {
                 onClick={handleLike}
                 className="flex items-center space-x-2 hover:opacity-75"
               >
-                <ThumbsUp className="w-6 h-6" />
+                <ThumbsUp
+                  className={`w-6 h-6 ${isLiked ? "text-blue-600" : ""}`}
+                />
+
                 <span>{post.likeCount}</span>
               </button>
 
@@ -550,7 +531,7 @@ const PostView = () => {
             <div className="flex items-center space-x-2 text-sm opacity-75">
               <span>{post.viewCount} views</span>
               <span>•</span>
-              <span>{formatDate(post.createdAt)}</span>
+              <span>{formatDate(post.created_at)}</span>
             </div>
           </div>
 
@@ -567,13 +548,14 @@ const PostView = () => {
 
           <div className="space-y-4">
             <h3 className="text-xl font-semibold">Comments</h3>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-col flex-wrap gap-2">
               {comments.map((comment: any) => (
                 <div
                   key={comment.id}
-                  className="text-lg bg-white bg-opacity-10 rounded-lg p-2"
+                  className="text-lg bg-gray-400 bg-opacity-10 rounded-lg p-2 w-full"
                 >
-                  {comment.text}
+                  <p>{comment.message}</p>
+                  <p className="text-gray-500 text-sm">Par {comment.author.username} le {formatDate(comment.created_at)}</p>
                 </div>
               ))}
             </div>

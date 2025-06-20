@@ -6,8 +6,12 @@ export class PostsAPI {
     return Axios.get("/posts");
   };
 
-    static getOnePost = (id: string) => {
-        return Axios.get(`/posts/${id}`);
+    static getOnePost = (id: string, token: string) => {
+        return Axios.get(`/posts/${id}`, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        });
     };
 
     static createPost = (data: any, token: string) => {
@@ -34,7 +38,11 @@ export class PostsAPI {
         });
     };
 
-    static incrementViewPost = (postId: string) => {
-        return Axios.put(`/posts/views/${postId}`);
+    static likePost = (postId: string, token: string) => {
+        return Axios.put(`/posts/like/${postId}`, {}, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        });
     }
 }

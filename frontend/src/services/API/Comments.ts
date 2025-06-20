@@ -7,8 +7,12 @@ export class CommentsAPI {
     };
 
 
-    static createComment = (data: any) => {
-        return Axios.post("comments/", data);
+    static createComment = (data: any, token: string) => {
+        return Axios.post("comments/", data, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        });
     }
 
 }
