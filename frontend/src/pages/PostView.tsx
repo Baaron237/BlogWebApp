@@ -1,6 +1,17 @@
 import React, { useContext, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { ThumbsUp, Share2, Smile, Send } from "lucide-react";
+import {
+  ThumbsUp,
+  Share2,
+  Smile,
+  Send,
+  MessageCircle,
+  Facebook,
+  X,
+  Instagram,
+  Linkedin,
+  Link,
+} from "lucide-react";
 import toast from "react-hot-toast";
 import { PostsAPI } from "../services/API/Posts";
 import { CommentsAPI } from "../services/API/Comments";
@@ -179,6 +190,7 @@ const PostView = () => {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showCommentEmojiPicker, setShowCommentEmojiPicker] = useState(false);
   const [showReactionDetails, setShowReactionDetails] = useState(false);
+  const [showShareMenu, setShowShareMenu] = useState(false);
   const [reactions, setReactions] = useState<Reaction[]>([]);
   const [comments, setComments] = useState<any[]>([]);
   const [commentText, setCommentText] = useState("");
@@ -237,19 +249,56 @@ const PostView = () => {
     // fetchPost();
   };
 
-  const handleShare = async () => {
+  const handleShare = (platform: string) => {
     if (!post) return;
 
-    const shareData = {
-      title: post.title,
-      text: post.content.substring(0, 100) + "...",
-      url: `${window.location.origin}/post/${post.id}`,
-    };
+    const shareUrl = `${window.location.origin}/post/${post.id}`;
+    const shareText = `${post.title} - ${post.content.substring(0, 100)}...`;
+    const encodedUrl = encodeURIComponent(shareUrl);
+    const encodedText = encodeURIComponent(shareText);
+
+    let url = "";
+
+    switch (platform) {
+      case "whatsapp":
+        url = `https://wa.me/?text=${encodedText}%20${encodedUrl}`;
+        break;
+      case "facebook":
+        url = `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`;
+        break;
+      case "x":
+        url = `https://x.com/intent/tweet?url=${encodedUrl}&text=${encodedText}`;
+        break;
+      case "instagram":
+        navigator.clipboard.writeText(shareUrl);
+        toast.success(
+          "Link copied! Open Instagram to paste it in a Story or message."
+        );
+        url = "https://www.instagram.com";
+        break;
+      case "linkedin":
+        url = `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`;
+        break;
+      case "reddit":
+        url = `https://www.reddit.com/submit?url=${encodedUrl}&title=${encodeURIComponent(
+          post.title
+        )}`;
+        break;
+      default:
+        return;
+    }
 
     try {
-      await navigator.share(shareData);
+      window.open(url, "_blank");
+      if (platform !== "instagram") {
+        toast.success(
+          `Sharing on ${platform.charAt(0).toUpperCase() + platform.slice(1)}!`
+        );
+      }
+      setShowShareMenu(false);
     } catch (err) {
-      console.error("Share failed:", err);
+      console.error(`Failed to share on ${platform}:`, err);
+      toast.error(`Failed to share on ${platform}`);
     }
   };
 
@@ -320,11 +369,15 @@ const PostView = () => {
         minHeight: "100vh",
       }}
       onClick={
-        showEmojiPicker || showCommentEmojiPicker || showReactionDetails
+        showEmojiPicker ||
+        showCommentEmojiPicker ||
+        showReactionDetails ||
+        showShareMenu
           ? () => {
               setShowEmojiPicker(false);
               setShowCommentEmojiPicker(false);
               setShowReactionDetails(false);
+              setShowShareMenu(false);
             }
           : undefined
       }
@@ -389,6 +442,7 @@ const PostView = () => {
                     setShowEmojiPicker(!showEmojiPicker);
                     setShowReactionDetails(false);
                     setShowCommentEmojiPicker(false);
+                    setShowShareMenu(false);
                   }}
                   className="flex items-center space-x-2 hover:opacity-75"
                 >
@@ -429,13 +483,68 @@ const PostView = () => {
                 )}
               </div>
 
-              <button
-                onClick={handleShare}
-                className="flex items-center space-x-2 hover:opacity-75"
-              >
-                <Share2 className="w-6 h-6" />
-                <span>Share</span>
-              </button>
+              <div className="relative">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowShareMenu(!showShareMenu);
+                    setShowEmojiPicker(false);
+                    setShowCommentEmojiPicker(false);
+                    setShowReactionDetails(false);
+                  }}
+                  className="flex items-center space-x-2 hover:opacity-75"
+                >
+                  <Share2 className="w-6 h-6" />
+                  <span>Share</span>
+                </button>
+
+                {showShareMenu && (
+                  <div className="absolute w-48 top-full left-0 mt-2 p-2 bg-white rounded-lg shadow-xl flex flex-col gap-2">
+                    <button
+                      onClick={() => handleShare("whatsapp")}
+                      className="flex items-center space-x-2 hover:bg-gray-100 p-2 rounded"
+                    >
+                      <MessageCircle className="w-5 h-5" />
+                      <span>WhatsApp</span>
+                    </button>
+                    <button
+                      onClick={() => handleShare("facebook")}
+                      className="flex items-center space-x-2 hover:bg-gray-100 p-2 rounded"
+                    >
+                      <Facebook className="w-5 h-5" />
+                      <span>Facebook</span>
+                    </button>
+                    <button
+                      onClick={() => handleShare("x")}
+                      className="flex items-center space-x-2 hover:bg-gray-100 p-2 rounded"
+                    >
+                      <X className="w-5 h-5" />
+                      <span>X</span>
+                    </button>
+                    <button
+                      onClick={() => handleShare("instagram")}
+                      className="flex items-center space-x-2 hover:bg-gray-100 p-2 rounded"
+                    >
+                      <Instagram className="w-5 h-5" />
+                      <span>Instagram</span>
+                    </button>
+                    <button
+                      onClick={() => handleShare("linkedin")}
+                      className="flex items-center space-x-2 hover:bg-gray-100 p-2 rounded"
+                    >
+                      <Linkedin className="w-5 h-5" />
+                      <span>LinkedIn</span>
+                    </button>
+                    <button
+                      onClick={() => handleShare("reddit")}
+                      className="flex items-center space-x-2 hover:bg-gray-100 p-2 rounded"
+                    >
+                      <Link className="w-5 h-5" />
+                      <span>Reddit</span>
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="flex items-center space-x-2 text-sm opacity-75">
@@ -487,6 +596,7 @@ const PostView = () => {
                     setShowCommentEmojiPicker(!showCommentEmojiPicker);
                     setShowEmojiPicker(false);
                     setShowReactionDetails(false);
+                    setShowShareMenu(false);
                   }}
                   className="hover:opacity-75"
                 >
