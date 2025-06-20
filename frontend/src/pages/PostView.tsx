@@ -162,6 +162,29 @@ const EMOJI_LIST = [
   "💎",
 ];
 
+type Post = {
+  id: string;
+  title: string;
+  content: string;
+  mediaUrls?: string[];
+  likeCount: number;
+  viewCount: number;
+  createdAt: string;
+  [key: string]: any;
+};
+
+type Theme = {
+  backgroundColor: string;
+  textColor: string;
+  secondaryColor?: string;
+  [key: string]: any;
+};
+
+type Reaction = {
+  emoji: string;
+  count: number;
+};
+
 const PostView = () => {
   const { id } = useParams();
   const [post, setPost] = useState<Post | null>(null);
@@ -171,7 +194,7 @@ const PostView = () => {
   const [showReactionDetails, setShowReactionDetails] = useState(false);
   const [showShareMenu, setShowShareMenu] = useState(false);
   const [reactions, setReactions] = useState<Reaction[]>([]);
-  const [comments, setComments] = useState<any[]>([]);
+  const [comments, setComments] = useState<Comment[]>([]);
   const [commentText, setCommentText] = useState("");
   const [isLiked, setIsLiked] = useState(false);
   const { token } = useContext(StoreContext)
@@ -548,14 +571,13 @@ const PostView = () => {
 
           <div className="space-y-4">
             <h3 className="text-xl font-semibold">Comments</h3>
-            <div className="flex flex-col flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2">
               {comments.map((comment: any) => (
                 <div
                   key={comment.id}
-                  className="text-lg bg-gray-400 bg-opacity-10 rounded-lg p-2 w-full"
+                  className="text-lg bg-white bg-opacity-10 rounded-lg p-2"
                 >
-                  <p>{comment.message}</p>
-                  <p className="text-gray-500 text-sm">Par {comment.author.username} le {formatDate(comment.created_at)}</p>
+                  {comment.text}
                 </div>
               ))}
             </div>
