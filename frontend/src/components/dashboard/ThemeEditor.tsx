@@ -13,7 +13,6 @@ const ThemeEditor = () => {
     try {
       const response = await ThemesAPI.getAllThemes();
       setThemes(response.data.themes);
-      
     } catch (error) {
       console.error("Error fetching themes:", error);
       toast.error("Failed to fetch themes");
@@ -42,28 +41,31 @@ const ThemeEditor = () => {
     };
     try {
       await ThemesAPI.createTheme(newTheme, token);
-
       toast.success("Theme created successfully");
       fetchThemes();
-      
     } catch (error) {
       console.error("Error creating new theme:", error);
       toast.error("Failed to create new theme");
       return;
-      
     }
-
   };
 
   const deleteTheme = async (id: string) => {
-    try {
-      await ThemesAPI.deleteTheme(id, token);
-      toast.success("Theme deleted successfully");
-      fetchThemes();
-    } catch (error) {
-      console.error("Error deleting theme:", error);
-      toast.error("Failed to delete theme");
-      
+    if (
+      window.confirm(
+        `Are you sure you want to delete the theme "${
+          themes.find((theme: any) => theme.id === id)?.name
+        }"?`
+      )
+    ) {
+      try {
+        await ThemesAPI.deleteTheme(id, token);
+        toast.success("Theme deleted successfully");
+        fetchThemes();
+      } catch (error) {
+        console.error("Error deleting theme:", error);
+        toast.error("Failed to delete theme");
+      }
     }
   };
 

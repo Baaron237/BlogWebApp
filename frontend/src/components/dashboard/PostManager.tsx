@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect, useContext } from "react";
 import { Routes, Route, useNavigate } from "react-router-dom";
 import { Plus, Edit2, Trash2 } from "lucide-react";
@@ -7,16 +6,15 @@ import toast from "react-hot-toast";
 import { PostsAPI } from "../../services/API/Posts";
 import { StoreContext } from "../../context/StoreContext";
 import LoadingScreen from "../LoadingScreen";
-import dayjs from 'dayjs';
-import 'dayjs/locale/fr';
+import dayjs from "dayjs";
+import "dayjs/locale/fr";
 
-dayjs.locale('fr');
+dayjs.locale("fr");
 
 const PostList = () => {
   const [posts, setPosts] = useState([]);
   const navigate = useNavigate();
   const { isLoading, setIsLoading, token } = useContext(StoreContext);
-
 
   const fetchPosts = async () => {
     setIsLoading(true);
@@ -31,21 +29,29 @@ const PostList = () => {
   };
 
   const deletePost = async (id: string) => {
-    setIsLoading(true);
-    try {
-      await PostsAPI.deletePost(id, token);
-      toast.success("Post deleted successfully");
-      fetchPosts();
-    } catch (error) {
-      console.error("Error deleting post:", error);
-      toast.error("Failed to delete post");
-    } finally {
-      setIsLoading(false);
+    if (
+      window.confirm(
+        `Are you sure you want to delete the post "${
+          posts.find((post: any) => post.id === id)?.title
+        }"?`
+      )
+    ) {
+      setIsLoading(true);
+      try {
+        await PostsAPI.deletePost(id, token);
+        toast.success("Post deleted successfully");
+        fetchPosts();
+      } catch (error) {
+        console.error("Error deleting post:", error);
+        toast.error("Failed to delete post");
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
   const formatDate = (dateString: Date) => {
-    return dayjs(dateString).format('D MMMM YYYY');
+    return dayjs(dateString).format("D MMMM YYYY");
   };
 
   useEffect(() => {
@@ -54,9 +60,7 @@ const PostList = () => {
 
   return (
     <div className="space-y-6">
-      {
-        isLoading && <LoadingScreen />
-      }
+      {isLoading && <LoadingScreen />}
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold text-gray-800">Posts</h2>
         <button

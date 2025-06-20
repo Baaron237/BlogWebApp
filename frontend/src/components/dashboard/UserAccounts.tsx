@@ -26,13 +26,21 @@ const UserAccounts = () => {
   };
 
   const handleDelete = async (userId: string) => {
-    try {
-      await UsersAPI.deleteUser(userId);
-      toast.success("User deleted successfully");
-      fetchUsers();
-    } catch (error) {
-      console.error("Error deleting user:", error);
-      toast.error("Failed to delete user");
+    if (
+      window.confirm(
+        `Are you sure you want to delete the user "${
+          users.find((user) => user.id === userId)?.username
+        }"?`
+      )
+    ) {
+      try {
+        await UsersAPI.deleteUser(userId);
+        toast.success("User deleted successfully");
+        fetchUsers();
+      } catch (error) {
+        console.error("Error deleting user:", error);
+        toast.error("Failed to delete user");
+      }
     }
   };
 
