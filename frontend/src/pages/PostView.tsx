@@ -236,12 +236,20 @@ const PostView = () => {
     }
   };
 
-  const addComment = async (emoji?: string) => {
+  const handleEmojiSelect = (emoji: string) => {
+    setCommentText((prev) => prev + emoji);
+  };
+
+  const addComment = async () => {
+    if (!commentText.trim()) {
+      toast.error("Comment cannot be empty");
+      return;
+    }
+
     try {
       await CommentsAPI.createComment({
         postId: id,
-        text: commentText || undefined,
-        emoji: emoji,
+        text: commentText,
       });
 
       fetchComments();
@@ -309,7 +317,7 @@ const PostView = () => {
                 ))}
               <div className="h-96">
                 <img
-                  src={`${API_URL}/uploads/${media.url}`}
+                  src={`${API_URL}/Uploads/${media.url}`}
                   alt={`Image ${index + 1}`}
                   className="w-full rounded-xl shadow-lg object-cover h-full"
                   style={{ pointerEvents: "none" }}
@@ -346,7 +354,7 @@ const PostView = () => {
                     {EMOJI_LIST.map((emoji) => (
                       <button
                         key={emoji}
-                        onClick={() => addComment(emoji)}
+                        onClick={() => handleEmojiSelect(emoji)}
                         className="text-2xl hover:scale-125 transition-transform"
                       >
                         {emoji}
@@ -404,9 +412,9 @@ const PostView = () => {
                 <Smile className="w-6 h-6" />
               </button>
               <button
-                onClick={() => addComment()}
+                onClick={addComment}
                 className="bg-purple-600 text-white p-2 rounded-lg hover:bg-purple-700 transition-colors"
-                disabled={!commentText && !showEmojiPicker}
+                disabled={!commentText.trim()}
               >
                 <Send className="w-6 h-6" />
               </button>
