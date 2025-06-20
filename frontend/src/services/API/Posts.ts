@@ -2,9 +2,9 @@
 import Axios from "../../helpers/axios";
 
 export class PostsAPI {
-  static getAllPosts = () => {
-    return Axios.get("/posts");
-  };
+    static getAllPosts = () => {
+        return Axios.get("/posts");
+    };
 
     static getOnePost = (id: string, token: string) => {
         return Axios.get(`/posts/${id}`, {
