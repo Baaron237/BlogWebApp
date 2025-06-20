@@ -14,8 +14,7 @@ const PostEditor = () => {
   const navigate = useNavigate();
   const [post, setPost] = useState({
     title: "",
-    content: "",
-    media_urls: [] as string[],
+    content: ""
   });
 
   const [illustrations, setIllustrations] = useState<any>([]);
@@ -35,6 +34,7 @@ const PostEditor = () => {
     try {
       const response = await PostsAPI.getOnePost(id!);
       setPost(response.data.post || {});
+      setIllustrations(response.data.post.media_urls);
     } catch (error) {
       toast.error("Failed to fetch post");
       console.error("Error fetching post:", error);
@@ -43,10 +43,24 @@ const PostEditor = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const newPost = new FormData();
+    newPost.append("title", post.title);
+    newPost.append("content", post.content);
+
+    const illustrationContents = illustrations.map((i: any) => ({
+      content: i.content,
+    }));
+    newPost.append("illustrations", JSON.stringify(illustrationContents));
+
+    illustrations.forEach((i: any) => {
+      if (i.media) {
+        newPost.append("media", i.media);
+      }
+    });
 
     if (id) {
       try {
-        await PostsAPI.updatePost(id, post, token);
+        await PostsAPI.updatePost(id, newPost, token);
         toast.success("Post updated successfully");
         navigate("/dashboard/posts");
       } catch (error) {
@@ -54,20 +68,6 @@ const PostEditor = () => {
         console.error("Error updating post:", error);
       }
     } else {
-      const newPost = new FormData();
-      newPost.append("title", post.title);
-      newPost.append("content", post.content);
-
-      const illustrationContents = illustrations.map((i: any) => ({
-        content: i.content,
-      }));
-      newPost.append("illustrations", JSON.stringify(illustrationContents));
-
-      illustrations.forEach((i: any) => {
-        if (i.media) {
-          newPost.append("media", i.media);
-        }
-      });
 
       try {
         await PostsAPI.createPost(newPost, token);
@@ -136,7 +136,7 @@ const PostEditor = () => {
             )
           }
           <div className="grid grid-cols-4 gap-4 mb-4">
-            {post.media_urls?.map((media: any, index: number) => (
+            {/* {post.media_urls?.map((media: any, index: number) => (
               <div key={media.id} className="relative">
                 <img
                   src={`${API_URL}/uploads/${media.url}`}
@@ -157,32 +157,21 @@ const PostEditor = () => {
                   <X className="w-4 h-4" />
                 </button>
               </div>
-            ))}
+            ))} */}
           </div>
-          {/* <label className="flex items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer hover:bg-gray-50">
-            <div className="flex flex-col items-center">
-              <ImageIcon className="w-8 h-8 text-gray-400" />
-              <span className="mt-2 text-sm text-gray-500">Add Media</span>
-            </div>
-            <input
-              type="file"
-              className="hidden"
-              accept="image/*"
-              // onChange={handleMediaUpload}
-            />
-          </label> */}
           {
-            illustrations.map((illustration: any, index: number) => (
+            illustrations?.map((illustration: any, index: number) => (
               <Illustration
                 key={index}
                 index={index}
                 values={illustration}
                 onChange={handleIllustrationChange}
+                id={id}
               />
             ))
           }
           {
-            (illustrations.length  < 5 && !id ) && (
+            (illustrations?.length  < 5 && !id ) && (
               <div className="w-full flex justify-end">
                   <span onClick={handleAddComponent} className='bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center cursor-pointer'>
                       <Plus className="w-5 h-5" />
