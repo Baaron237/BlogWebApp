@@ -79,31 +79,59 @@ router.post("/", authenticateToken, isAdmin, upload.array("media", 5), async (re
   }
 );
 
-router.put("/:id", authenticateToken, isAdmin, upload.array("media"), async (req, res) => {
+router.put("/:id", authenticateToken, isAdmin, upload.array("media", 5), async (req, res) => {
     try {
-      const { title, content } = req.body;
-      const mediaUrls = req.files
-        ? req.files.map((file) => `/uploads/${file.filename}`)
-        : [];
-
+      const { title, content, illustrations } = req.body;
+      const parsedIllustrations = JSON.parse(illustrations);
       const post = await Post.findOne({
         where: {
           id: req.params.id,
           authorId: req.user.id,
         },
+        include: ["media_urls"],
       });
 
       if (!post) {
         return res.status(404).json({ error: "Post not found" });
       }
 
-      await post.update({
+      await Post.update({
         title,
         content,
-        mediaUrls,
+      }, {
+        where: {
+          id: post.id,
+        }
       });
 
+      if (post.media_urls && post.media_urls.length > 0) {
+        post.media_urls.forEach((media) => {
+          if (media.url) {
+            const filePath = path.resolve(__dirname, "../public/uploads", media.url);
+            
+            if (fs.existsSync(filePath)) {
+              fs.unlinkSync(filePath);
+            }
+          }
+        });
+      }
+
+      await Promise.all(
+        parsedIllustrations.map(async (illustration, index) => {
+          await MediaUrls.update({
+            content: illustration.content,
+            url: req.files[index] ? `${req.files[index].filename}` : '',
+          },
+          {
+            where: {
+              postId: post.id,
+              order: index + 1
+            }
+          })
+        })
+      );
       res.status(200).json({ post });
+
     } catch (error) {
       console.log("Error to update post: ", error)
       res.status(500).json({ error: error.message });
