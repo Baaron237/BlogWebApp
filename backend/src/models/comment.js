@@ -9,7 +9,7 @@ export default class Comment extends Model {
           primaryKey: true,
           autoIncrement: true,
         },
-        emoji: {
+        message: {
           type: DataTypes.STRING,
           allowNull: false,
         },

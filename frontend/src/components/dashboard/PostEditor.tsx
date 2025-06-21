@@ -32,7 +32,7 @@ const PostEditor = () => {
 
   const fetchPost = async () => {
     try {
-      const response = await PostsAPI.getOnePost(id!);
+      const response = await PostsAPI.getOnePost(id!, token!);
       setPost(response.data.post || {});
       setIllustrations(response.data.post.media_urls);
     } catch (error) {

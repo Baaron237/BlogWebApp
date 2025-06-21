@@ -1,5 +1,5 @@
 import express from "express";
-import { MediaUrls, Post } from "../models/index.js";
+import { Like, MediaUrls, Post, PostView } from "../models/index.js";
 import { authenticateToken, isAdmin } from "../middleware/auth.js";
 import { upload } from "../middleware/upload.js";
 import * as path from 'path';
@@ -29,7 +29,7 @@ router.get("/", async (req, res) => {
   }
 });
 
-router.get("/:id", async (req, res) => {
+router.get("/:id", authenticateToken , async (req, res) => {
   try {
     const post = await Post.findOne({
       where: { id: req.params.id },
@@ -44,8 +44,23 @@ router.get("/:id", async (req, res) => {
     if (!post) {
       return res.status(404).json({ error: "Post not found" });
     }
+
+    const userId = req.user.id;
+    const alreadyViewed = await PostView.findOne({
+      where: {
+        userId,
+        postId: post.id,
+      },
+    });
+
+    if (!alreadyViewed) {
+      await PostView.create({ userId, postId: post.id });
+      await post.update({ viewCount: post.viewCount + 1 });
+    }
+
     res.status(200).json({ post });
   } catch (error) {
+    console.error("Error fetching post:", error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -184,63 +199,33 @@ router.delete("/:id", authenticateToken, isAdmin, async (req, res) => {
 });
 
 
-router.put("/views/:postId", async(req, res) => {
-    try {
-      const post = await Post.findOne({ where: { id : req.params.postId } })
-      if(!post) {
-        return res.status(404).json({ error: "Post not found" });
-      }
-
-      await post.update({
-          viewCount: post.viewCount + 1
-      })
-
-      return res.status(200).json({ post });
-    } catch (error) {
-        console.log("Error to update post view: ", error)
-        res.status(500).json({ error: error.message })
+router.put("/like/:postId", authenticateToken, async (req, res) => {
+  try {
+    const post = await Post.findByPk(req.params.postId);
+    if (!post) {
+      return res.status(404).json({ error: "Post not found" });
     }
+
+    const userId = req.user.id;
+
+    const alreadyLiked = await post.hasLikedByUser(userId);
+
+    if (alreadyLiked) {
+      await post.removeLikedByUser(userId);
+      post.likeCount -= 1;
+      await post.save();
+      return res.status(200).json({ message: "Like removed", liked: false });
+    } else {
+      await post.addLikedByUser(userId);
+      post.likeCount += 1;
+      await post.save();
+      return res.status(200).json({ message: "Post liked", liked: true });
+    }
+  } catch (error) {
+    console.error("Like error:", error);
+    res.status(500).json({ error: error.message });
+  }
 });
 
-// router.post("/:id/like", authenticateToken, async (req, res) => {
-//   try {
-//     const post = await Post.findByPk(req.params.id);
-//     if (!post) {
-//       return res.status(404).json({ error: "Post not found" });
-//     }
-
-//     const userId = req.user.id;
-//     if (post.likes.includes(userId)) {
-//       return res.status(400).json({ error: "You have already liked this post" });
-//     }
-
-//     post.likes.push(userId);
-//     await post.save();
-
-//     res.status(200).json({ message: "Post liked successfully", post });
-//   } catch (error) {
-//     res.status(500).json({ error: error.message });
-//   }
-// });
-// router.post("/:id/unlike", authenticateToken, async (req, res) => {
-//   try {
-//     const post = await Post.findByPk(req.params.id);
-//     if (!post) {
-//       return res.status(404).json({ error: "Post not found" });
-//     }
-
-//     const userId = req.user.id;
-//     if (!post.likes.includes(userId)) {
-//       return res.status(400).json({ error: "You have not liked this post" });
-//     }
-
-//     post.likes = post.likes.filter((id) => id !== userId);
-//     await post.save();
-
-//     res.status(200).json({ message: "Post unliked successfully", post });
-//   } catch (error) {
-//     res.status(500).json({ error: error.message });
-//   }
-// });
 
 export default router;
