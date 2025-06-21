@@ -343,7 +343,7 @@ const PostView: React.FC = () => {
                   className="flex items-center space-x-2 hover:opacity-75 transition-opacity"
                   aria-label="View reaction details"
                 >
-                  <span className="text-sm text-gray-600">Details</span>
+                  <span className="text-xs text-gray-600">Details</span>
                 </button>
                 {showReactionDetails && (
                   <div className="absolute w-44 top-full left-0 mt-2 p-3 bg-white rounded-lg shadow-xl">
@@ -460,21 +460,16 @@ const PostView: React.FC = () => {
                     key={comment.id}
                     className="flex items-start space-x-3 bg-gray-100 bg-opacity-50 rounded-lg p-3"
                   >
-                    <img
-                      src={
-                        comment.author.profilePicture ||
-                        "https://via.placeholder.com/32"
-                      }
-                      alt={`Avatar of ${comment.author.username}`}
-                      className="w-8 h-8 rounded-full object-cover"
-                    />
                     <div className="flex-1">
-                      <p className="text-base text-gray-800">
-                        {comment.message}
+                      <p className="text-lg text-gray-500">
+                        {comment.author.username}
                       </p>
-                      <p className="text-xs text-gray-500 mt-1">
-                        By {comment.author.username} •{" "}
-                        {formatDate(comment.created_at)}
+                      <p className="text-base text-gray-800 pl-4 pt-2">
+                        {comment.message}
+                        <span className="text-xs text-gray-500">
+                          {" "}
+                          • {formatDate(comment.created_at)}
+                        </span>
                       </p>
                     </div>
                   </div>
@@ -488,7 +483,7 @@ const PostView: React.FC = () => {
                 value={commentText}
                 onChange={(e) => setCommentText(e.target.value)}
                 placeholder="Add a comment..."
-                className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none text-sm"
+                className="w-full p-1 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none text-sm"
                 style={{
                   color: activeTheme?.textColor || "#111827",
                   backgroundColor: activeTheme?.backgroundColor || "#f3f4f6",
