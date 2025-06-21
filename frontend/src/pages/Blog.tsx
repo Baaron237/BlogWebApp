@@ -46,9 +46,8 @@ type Post = {
 const Blog = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [activeTheme, setActiveTheme] = useState<Theme | null>(null);
-  const [showShareMenu, setShowShareMenu] = useState<{
-    [key: string]: boolean;
-  }>({});
+  const [showShareMenu, setShowShareMenu] = useState(false);
+  const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
   const { isLoading, setIsLoading, token } = useContext(StoreContext);
   const [isLiked, setIsLiked] = useState(false);
 
@@ -128,7 +127,8 @@ const Blog = () => {
             url: shareUrl,
           })
           .catch((err) => console.error("Native share failed:", err));
-        setShowShareMenu({ ...showShareMenu, [post.id]: false });
+        setShowShareMenu(false);
+        setSelectedPostId(null);
         return;
       default:
         return;
@@ -141,7 +141,8 @@ const Blog = () => {
           `Sharing on ${platform.charAt(0).toUpperCase() + platform.slice(1)}!`
         );
       }
-      setShowShareMenu({ ...showShareMenu, [post.id]: false });
+      setShowShareMenu(false);
+      setSelectedPostId(null);
     } catch (err) {
       console.error(`Failed to share on ${platform}:`, err);
       toast.error(`Failed to share on ${platform}`);
@@ -169,7 +170,16 @@ const Blog = () => {
         backgroundColor: activeTheme?.backgroundColor || "#f3f4f6",
         color: activeTheme?.textColor || "#111827",
       }}
-      onClick={() => setShowShareMenu({})}
+      onClick={
+        showShareMenu
+          ? (e) => {
+              if (!(e.target as HTMLElement).closest(".share-menu")) {
+                setShowShareMenu(false);
+                setSelectedPostId(null);
+              }
+            }
+          : undefined
+      }
     >
       <div className="max-w-4xl mx-auto py-12 px-4">
         <h1 className="text-4xl font-bold mb-12">Blog</h1>
@@ -218,18 +228,16 @@ const Blog = () => {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          setShowShareMenu({
-                            ...showShareMenu,
-                            [post.id]: !showShareMenu[post.id],
-                          });
+                          setShowShareMenu(!showShareMenu);
+                          setSelectedPostId(post.id);
                         }}
                         className="flex items-center space-x-1 text-gray-600 hover:text-blue-600"
                       >
                         <Share2 className="w-5 h-5" />
                         <span>Share</span>
                       </button>
-                      {showShareMenu[post.id] && (
-                        <div className="absolute w-48 top-full right-0 mt-2 p-2 bg-white rounded-lg shadow-xl flex flex-col gap-2 z-10">
+                      {showShareMenu && selectedPostId === post.id && (
+                        <div className="share-menu absolute w-48 top-full right-0 mt-2 p-2 bg-white rounded-lg shadow-xl flex flex-col gap-2 z-50">
                           <button
                             onClick={() =>
                               handlePlatformShare("whatsapp", post)
