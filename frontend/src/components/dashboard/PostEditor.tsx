@@ -1,12 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect, useContext, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Save, Image as ImageIcon, X, Plus } from "lucide-react";
+import { Save, Image as ImageIcon, X, Plus, Smile } from "lucide-react";
 import toast from "react-hot-toast";
 import { PostsAPI } from "../../services/API/Posts";
 import { StoreContext } from "../../context/StoreContext";
 import Illustration from "../Illustration";
 import { API_URL } from "../../constants/API_URL";
+import Picker from "emoji-picker-react";
 
 const PostEditor = () => {
   const { token } = useContext(StoreContext);
@@ -19,6 +20,10 @@ const PostEditor = () => {
   const [illustrations, setIllustrations] = useState<any>([]);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<number | null>(null);
+  const [showTitleEmojiPicker, setShowTitleEmojiPicker] = useState(false);
+  const [showContentEmojiPicker, setShowContentEmojiPicker] = useState(false);
+  const titleRef = useRef<HTMLInputElement>(null);
+  const contentRef = useRef<HTMLTextAreaElement>(null);
 
   const handleAddComponent = () => {
     if (illustrations.length < 5) {
@@ -101,6 +106,27 @@ const PostEditor = () => {
     setItemToDelete(null);
   };
 
+  const onEmojiClick = (
+    event: any,
+    { emoji }: { emoji: string },
+    field: "title" | "content"
+  ) => {
+    const input = field === "title" ? titleRef.current : contentRef.current;
+    if (input) {
+      const start = input.selectionStart;
+      const end = input.selectionEnd;
+      const text = input.value;
+      const newText = text.substring(0, start) + emoji + text.substring(end);
+      setPost((prev) => ({
+        ...prev,
+        [field]: newText,
+      }));
+      input.selectionStart = input.selectionEnd = start + emoji.length;
+      if (field === "title") setShowTitleEmojiPicker(false);
+      else setShowContentEmojiPicker(false);
+    }
+  };
+
   useEffect(() => {
     if (id) {
       fetchPost();
@@ -127,25 +153,59 @@ const PostEditor = () => {
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Title
           </label>
-          <input
-            type="text"
-            value={post.title}
-            onChange={(e) => setPost({ ...post, title: e.target.value })}
-            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-            required
-          />
+          <div className="relative">
+            <input
+              ref={titleRef}
+              type="text"
+              value={post.title}
+              onChange={(e) => setPost({ ...post, title: e.target.value })}
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+              required
+            />
+            <button
+              type="button"
+              onClick={() => setShowTitleEmojiPicker(!showTitleEmojiPicker)}
+              className="absolute right-2 top-2 p-1 text-gray-600 hover:text-gray-800"
+            >
+              <Smile className="w-5 h-5" />
+            </button>
+            {showTitleEmojiPicker && (
+              <div className="absolute top-full right-0 mt-2 z-50">
+                <Picker
+                  onEmojiClick={(e, data) => onEmojiClick(e, data, "title")}
+                />
+              </div>
+            )}
+          </div>
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Content
           </label>
-          <textarea
-            value={post.content}
-            onChange={(e) => setPost({ ...post, content: e.target.value })}
-            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 h-64"
-            required
-          />
+          <div className="relative">
+            <textarea
+              ref={contentRef}
+              value={post.content}
+              onChange={(e) => setPost({ ...post, content: e.target.value })}
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 h-64"
+              required
+            />
+            <button
+              type="button"
+              onClick={() => setShowContentEmojiPicker(!showContentEmojiPicker)}
+              className="absolute right-2 top-2 p-1 text-gray-600 hover:text-gray-800"
+            >
+              <Smile className="w-5 h-5" />
+            </button>
+            {showContentEmojiPicker && (
+              <div className="absolute top-full right-0 mt-2 z-50">
+                <Picker
+                  onEmojiClick={(e, data) => onEmojiClick(e, data, "content")}
+                />
+              </div>
+            )}
+          </div>
         </div>
 
         <div>

@@ -11,15 +11,13 @@ import {
   Link as LinkIcon,
   MessageSquare,
 } from "lucide-react";
-import toast from "react-hot-toast";
+import toast, { Toaster } from "react-hot-toast";
 import { PostsAPI } from "../services/API/Posts";
 import { StoreContext } from "../context/StoreContext";
 import { ThemesAPI } from "../services/API/Themes";
 import dayjs from "dayjs";
-import "dayjs/locale/fr";
+import "dayjs/locale/en";
 import { API_URL } from "../constants/API_URL";
-
-dayjs.locale("fr");
 
 type Theme = {
   backgroundColor?: string;
@@ -43,13 +41,14 @@ type Post = {
   reactions?: Reaction[];
 };
 
-const Blog = () => {
+const Blog: React.FC = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [activeTheme, setActiveTheme] = useState<Theme | null>(null);
-  const [showShareMenu, setShowShareMenu] = useState(false);
-  const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
+  const [shareMenuOpen, setShareMenuOpen] = useState<{
+    [key: string]: boolean;
+  }>({});
+  const [likedPosts, setLikedPosts] = useState<{ [key: string]: boolean }>({});
   const { isLoading, setIsLoading, token } = useContext(StoreContext);
-  const [isLiked, setIsLiked] = useState(false);
 
   const fetchPosts = async () => {
     setIsLoading(true);
@@ -71,18 +70,22 @@ const Blog = () => {
       setActiveTheme(response.data?.theme || null);
     } catch (error) {
       console.error("Error fetching active theme:", error);
+      toast.error("Failed to load theme");
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleLike = async (id: string) => {
+    if (!token) return;
     try {
-      const response = await PostsAPI.likePost(id!, token!);
-      setIsLiked(response.data.liked);
+      const response = await PostsAPI.likePost(id, token);
+      setLikedPosts((prev) => ({ ...prev, [id]: response.data.liked }));
       fetchPosts();
+      toast.success(response.data.liked ? "Post liked!" : "Like removed");
     } catch (error) {
       console.error("Error liking post:", error);
+      toast.error("Failed to like post");
     }
   };
 
@@ -93,7 +96,6 @@ const Blog = () => {
     const encodedText = encodeURIComponent(shareText);
 
     let url = "";
-
     switch (platform) {
       case "whatsapp":
         url = `https://wa.me/?text=${encodedText}%20${encodedUrl}`;
@@ -106,9 +108,7 @@ const Blog = () => {
         break;
       case "instagram":
         navigator.clipboard.writeText(shareUrl);
-        toast.success(
-          "Link copied! Open Instagram to paste it in a Story or message."
-        );
+        toast.success("Link copied! Open Instagram to paste it.");
         url = "https://www.instagram.com";
         break;
       case "linkedin":
@@ -127,8 +127,7 @@ const Blog = () => {
             url: shareUrl,
           })
           .catch((err) => console.error("Native share failed:", err));
-        setShowShareMenu(false);
-        setSelectedPostId(null);
+        setShareMenuOpen((prev) => ({ ...prev, [post.id]: false }));
         return;
       default:
         return;
@@ -138,19 +137,18 @@ const Blog = () => {
       window.open(url, "_blank");
       if (platform !== "instagram") {
         toast.success(
-          `Sharing on ${platform.charAt(0).toUpperCase() + platform.slice(1)}!`
+          `Shared on ${platform.charAt(0).toUpperCase() + platform.slice(1)}!`
         );
       }
-      setShowShareMenu(false);
-      setSelectedPostId(null);
+      setShareMenuOpen((prev) => ({ ...prev, [post.id]: false }));
     } catch (err) {
       console.error(`Failed to share on ${platform}:`, err);
       toast.error(`Failed to share on ${platform}`);
     }
   };
 
-  const formatDate = (dateString: Date) => {
-    return dayjs(dateString).format("D MMMM YYYY");
+  const formatDate = (dateString: string) => {
+    return dayjs(dateString).format("MMMM D, YYYY");
   };
 
   useEffect(() => {
@@ -169,20 +167,16 @@ const Blog = () => {
       style={{
         backgroundColor: activeTheme?.backgroundColor || "#f3f4f6",
         color: activeTheme?.textColor || "#111827",
+        minHeight: "100vh",
       }}
-      onClick={
-        showShareMenu
-          ? (e) => {
-              if (!(e.target as HTMLElement).closest(".share-menu")) {
-                setShowShareMenu(false);
-                setSelectedPostId(null);
-              }
-            }
-          : undefined
-      }
+      onClick={(e) => {
+        if (!(e.target as HTMLElement).closest(".share-menu")) {
+          setShareMenuOpen({});
+        }
+      }}
     >
-      <div className="max-w-4xl mx-auto py-12 px-4">
-        <h1 className="text-4xl font-bold mb-12">Blog</h1>
+      <div className="max-w-3xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+        <h1 className="text-3xl font-bold mb-12 sm:text-4xl">Blog</h1>
         <div className="space-y-12">
           {posts.map((post) => (
             <article
@@ -199,110 +193,138 @@ const Blog = () => {
                   className="w-full h-64 object-cover"
                   crossOrigin="anonymous"
                   style={{ pointerEvents: "none" }}
+                  onError={(e) =>
+                    (e.currentTarget.src =
+                      "https://via.placeholder.com/600x400")
+                  }
                 />
               )}
               <div className="p-6">
                 <Link to={`/post/${post.id}`}>
-                  <h2 className="text-2xl font-bold mb-4">{post.title}</h2>
+                  <h2 className="text-2xl font-bold mb-4 hover:text-blue-600">
+                    {post.title}
+                  </h2>
                 </Link>
-                <p className="mb-6">{post.content.substring(0, 200)}...</p>
+                <p className="mb-6 text-gray-700">
+                  {post.content.substring(0, 200)}...
+                </p>
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
+                  <div className="flex items-center space-x-6">
                     <button
                       onClick={() => handleLike(post.id)}
-                      className="flex items-center space-x-1 text-gray-600 hover:text-blue-600"
+                      className="flex items-center space-x-2 text-gray-600 hover:text-blue-600 transition-colors"
+                      aria-label={
+                        likedPosts[post.id] ? "Unlike post" : "Like post"
+                      }
                     >
                       <ThumbsUp
-                        className={`w-6 h-6 ${isLiked ? "text-blue-600" : ""}`}
+                        className={`w-5 h-5 ${
+                          likedPosts[post.id] ? "text-blue-600" : ""
+                        }`}
                       />
-                      <span>{post.likeCount || 0}</span>
+                      <span className="text-sm">
+                        {post.likeCount || 0} Likes
+                      </span>
                     </button>
                     <Link
                       to={`/post/${post.id}`}
-                      className="flex items-center space-x-1 text-gray-600 hover:text-blue-600"
+                      className="flex items-center space-x-2 text-gray-600 hover:text-blue-600 transition-colors"
+                      aria-label="View comments"
                     >
                       <MessageCircle className="w-5 h-5" />
-                      <span>{post.commentCount || 0}</span>
+                      <span className="text-sm">
+                        {post.commentCount || 0} Comments
+                      </span>
                     </Link>
                     <div className="relative">
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          setShowShareMenu(!showShareMenu);
-                          setSelectedPostId(post.id);
+                          setShareMenuOpen((prev) => ({
+                            ...prev,
+                            [post.id]: !prev[post.id],
+                          }));
                         }}
-                        className="flex items-center space-x-1 text-gray-600 hover:text-blue-600"
+                        className="flex items-center space-x-2 text-gray-600 hover:text-blue-600 transition-colors"
+                        aria-label="Open share menu"
                       >
                         <Share2 className="w-5 h-5" />
-                        <span>Share</span>
+                        <span className="text-sm">Share</span>
                       </button>
-                      {showShareMenu && selectedPostId === post.id && (
-                        <div className="share-menu absolute w-48 top-full right-0 mt-2 p-2 bg-white rounded-lg shadow-xl flex flex-col gap-2 z-50">
+                      {shareMenuOpen[post.id] && (
+                        <div className="share-menu absolute w-44 top-full right-0 mt-2 p-2 bg-white rounded-lg shadow-xl flex flex-col gap-1 z-50 max-h-[70vh] overflow-y-auto">
                           <button
                             onClick={() =>
                               handlePlatformShare("whatsapp", post)
                             }
-                            className="flex items-center space-x-2 hover:bg-gray-100 p-2 rounded"
+                            className="flex items-center space-x-2 hover:bg-gray-100 p-2 rounded text-sm"
+                            aria-label="Share on WhatsApp"
                           >
-                            <MessageSquare className="w-5 h-5" />
+                            <MessageSquare className="w-4 h-4 text-gray-600" />
                             <span>WhatsApp</span>
                           </button>
                           <button
                             onClick={() =>
                               handlePlatformShare("facebook", post)
                             }
-                            className="flex items-center space-x-2 hover:bg-gray-100 p-2 rounded"
+                            className="flex items-center space-x-2 hover:bg-gray-100 p-2 rounded text-sm"
+                            aria-label="Share on Facebook"
                           >
-                            <Facebook className="w-5 h-5" />
+                            <Facebook className="w-4 h-4 text-gray-600" />
                             <span>Facebook</span>
                           </button>
                           <button
                             onClick={() => handlePlatformShare("x", post)}
-                            className="flex items-center space-x-2 hover:bg-gray-100 p-2 rounded"
+                            className="flex items-center space-x-2 hover:bg-gray-100 p-2 rounded text-sm"
+                            aria-label="Share on X"
                           >
-                            <X className="w-5 h-5" />
+                            <X className="w-4 h-4 text-gray-600" />
                             <span>X</span>
                           </button>
                           <button
                             onClick={() =>
                               handlePlatformShare("instagram", post)
                             }
-                            className="flex items-center space-x-2 hover:bg-gray-100 p-2 rounded"
+                            className="flex items-center space-x-2 hover:bg-gray-100 p-2 rounded text-sm"
+                            aria-label="Share on Instagram"
                           >
-                            <Instagram className="w-5 h-5" />
+                            <Instagram className="w-4 h-4 text-gray-600" />
                             <span>Instagram</span>
                           </button>
                           <button
                             onClick={() =>
                               handlePlatformShare("linkedin", post)
                             }
-                            className="flex items-center space-x-2 hover:bg-gray-100 p-2 rounded"
+                            className="flex items-center space-x-2 hover:bg-gray-100 p-2 rounded text-sm"
+                            aria-label="Share on LinkedIn"
                           >
-                            <Linkedin className="w-5 h-5" />
+                            <Linkedin className="w-4 h-4 text-gray-600" />
                             <span>LinkedIn</span>
                           </button>
                           <button
                             onClick={() => handlePlatformShare("reddit", post)}
-                            className="flex items-center space-x-2 hover:bg-gray-100 p-2 rounded"
+                            className="flex items-center space-x-2 hover:bg-gray-100 p-2 rounded text-sm"
+                            aria-label="Share on Reddit"
                           >
-                            <LinkIcon className="w-5 h-5" />
+                            <LinkIcon className="w-4 h-4 text-gray-600" />
                             <span>Reddit</span>
                           </button>
                           <button
                             onClick={() => handlePlatformShare("native", post)}
-                            className="flex items-center space-x-2 hover:bg-gray-100 p-2 rounded"
+                            className="flex items-center space-x-2 hover:bg-gray-100 p-2 rounded text-sm"
+                            aria-label="Native Share"
                           >
-                            <Share2 className="w-5 h-5" />
+                            <Share2 className="w-4 h-4 text-gray-600" />
                             <span>Native Share</span>
                           </button>
                         </div>
                       )}
                     </div>
                     <span className="text-sm text-gray-600">
-                      Reactions: {totalReactions(post)}
+                      {totalReactions(post)} Reactions
                     </span>
                   </div>
-                  <span className="text-sm text-gray-500">
+                  <span className="text-xs text-gray-500">
                     {formatDate(post.created_at)}
                   </span>
                 </div>
@@ -311,6 +333,7 @@ const Blog = () => {
           ))}
         </div>
       </div>
+      <Toaster position="top-right" />
     </div>
   );
 };
