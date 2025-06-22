@@ -49,8 +49,6 @@ const PostView: React.FC = () => {
     try {
       const response = await PostsAPI.getOnePost(id!, token!);
 
-      console.log("Post data:", response.data.post);
-
       setPost(response.data.post || {});
       setLikeCount(response.data.post.likeCount || 0);
       setIsLiked(response.data.post.likedByUsers.some(u => u.id === user.id));

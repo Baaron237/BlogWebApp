@@ -107,25 +107,32 @@ const PostEditor = () => {
   };
 
   const onEmojiClick = (
-    event: any,
-    { emoji }: { emoji: string },
+    emojiData: { emoji: string },
+    event: MouseEvent,
     field: "title" | "content"
   ) => {
     const input = field === "title" ? titleRef.current : contentRef.current;
     if (input) {
-      const start = input.selectionStart;
-      const end = input.selectionEnd;
+      const start = input.selectionStart || 0;
+      const end = input.selectionEnd || 0;
       const text = input.value;
-      const newText = text.substring(0, start) + emoji + text.substring(end);
+      const newText = text.substring(0, start) + emojiData.emoji + text.substring(end);
+
       setPost((prev) => ({
         ...prev,
         [field]: newText,
       }));
-      input.selectionStart = input.selectionEnd = start + emoji.length;
+      
+      setTimeout(() => {
+        input.selectionStart = input.selectionEnd = start + emojiData.emoji?.length;
+        input.focus();
+      }, 0);
+
       if (field === "title") setShowTitleEmojiPicker(false);
       else setShowContentEmojiPicker(false);
     }
   };
+
 
   useEffect(() => {
     if (id) {
@@ -171,9 +178,8 @@ const PostEditor = () => {
             </button>
             {showTitleEmojiPicker && (
               <div className="absolute top-full right-0 mt-2 z-50">
-                <Picker
-                  onEmojiClick={(e, data) => onEmojiClick(e, data, "title")}
-                />
+                <Picker onEmojiClick={(emojiData, event) => onEmojiClick(emojiData, event, "title")} />
+
               </div>
             )}
           </div>
@@ -200,9 +206,8 @@ const PostEditor = () => {
             </button>
             {showContentEmojiPicker && (
               <div className="absolute top-full right-0 mt-2 z-50">
-                <Picker
-                  onEmojiClick={(e, data) => onEmojiClick(e, data, "content")}
-                />
+                <Picker onEmojiClick={(emojiData, event) => onEmojiClick(emojiData, event, "content")} />
+
               </div>
             )}
           </div>
@@ -214,31 +219,7 @@ const PostEditor = () => {
               Illustrations
             </label>
           )}
-          <div className="grid grid-cols-4 gap-4 mb-4">
-            {illustrations.map((media: any, index: number) => (
-              <div key={index} className="relative">
-                <img
-                  src={
-                    media.url
-                      ? `${API_URL}/Uploads/${media.url}`
-                      : media.media
-                      ? URL.createObjectURL(media.media)
-                      : ""
-                  }
-                  alt={`Media ${index + 1}`}
-                  className="w-full h-32 object-cover rounded-lg"
-                  crossOrigin="anonymous"
-                />
-                <button
-                  type="button"
-                  onClick={() => handleDelete(index)}
-                  className="absolute top-2 right-2 p-1 bg-red-600 text-white rounded-full"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            ))}
-          </div>
+          
           {illustrations.map((illustration: any, index: number) => (
             <Illustration
               key={index}
