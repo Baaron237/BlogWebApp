@@ -45,4 +45,12 @@ export class PostsAPI {
             },
         });
     }
+
+    static addReaction = (postId: string, emoji: string, token: string) => {
+        return Axios.post(`/posts/${postId}/react`, { emoji }, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        });
+    }
 }

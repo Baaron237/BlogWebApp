@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useContext, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -18,30 +19,10 @@ import { ThemesAPI } from "../services/API/Themes";
 import dayjs from "dayjs";
 import "dayjs/locale/fr";
 import { API_URL } from "../constants/API_URL";
+import { Post, Theme } from "../types";
 
 dayjs.locale("fr");
 
-type Theme = {
-  backgroundColor?: string;
-  textColor?: string;
-  primaryColor?: string;
-  [key: string]: any;
-};
-
-type Reaction = {
-  count: number;
-};
-
-type Post = {
-  id: string;
-  title: string;
-  content: string;
-  media_urls?: { url: string }[];
-  likeCount: number;
-  commentCount: number;
-  created_at: string;
-  reactions?: Reaction[];
-};
 
 const Blog = () => {
   const [posts, setPosts] = useState<Post[]>([]);
@@ -49,14 +30,26 @@ const Blog = () => {
   const [showShareMenu, setShowShareMenu] = useState<{
     [key: string]: boolean;
   }>({});
-  const { isLoading, setIsLoading, token } = useContext(StoreContext);
-  const [isLiked, setIsLiked] = useState(false);
+  const { setIsLoading, token, user } = useContext(StoreContext);
+  const [likedMap, setLikedMap] = useState<{ [postId: number]: boolean }>({});
+
 
   const fetchPosts = async () => {
     setIsLoading(true);
     try {
       const response = await PostsAPI.getAllPosts();
-      setPosts(response.data?.posts || []);
+      const fetchedPosts = response.data?.posts || [];
+
+      setPosts(fetchedPosts);
+
+      
+      const likes = fetchedPosts.reduce((acc: any, post: any) => {
+        const hasLiked = post.likedByUsers?.some((u: any) => u.id === user?.id);
+        acc[post.id] = hasLiked;
+        return acc;
+      }, {});
+      setLikedMap(likes);
+
     } catch (error) {
       console.error("Error fetching posts:", error);
       toast.error("Failed to fetch posts");
@@ -79,13 +72,21 @@ const Blog = () => {
 
   const handleLike = async (id: string) => {
     try {
-      const response = await PostsAPI.likePost(id!, token!);
-      setIsLiked(response.data.liked);
+      await PostsAPI.likePost(id!, token!);
+      setLikedMap((prev) => ({
+        ...prev,
+        [id]: !prev[id],
+      }));
       fetchPosts();
     } catch (error) {
       console.error("Error liking post:", error);
     }
   };
+
+  const hasUserLiked = (postId: number | string): boolean => {
+    return likedMap[postId] || false;
+  };
+
 
   const handlePlatformShare = (platform: string, post: Post) => {
     const shareUrl = `${window.location.origin}/post/${post.id}`;
@@ -157,11 +158,6 @@ const Blog = () => {
     fetchActiveTheme();
   }, []);
 
-  const totalReactions = (post: Post) => {
-    return (
-      post.reactions?.reduce((sum, reaction) => sum + reaction.count, 0) || 0
-    );
-  };
 
   return (
     <div
@@ -177,7 +173,7 @@ const Blog = () => {
           {posts.map((post) => (
             <article
               key={post.id}
-              className="rounded-xl overflow-hidden shadow-lg"
+              className="rounded-xl shadow-lg"
               style={{
                 backgroundColor: activeTheme?.primaryColor || "#ffffff",
               }}
@@ -203,7 +199,7 @@ const Blog = () => {
                       className="flex items-center space-x-1 text-gray-600 hover:text-blue-600"
                     >
                       <ThumbsUp
-                        className={`w-6 h-6 ${isLiked ? "text-blue-600" : ""}`}
+                        className={`w-6 h-6 ${hasUserLiked(post.id) ? "text-blue-600" : ""}`}
                       />
                       <span>{post.likeCount || 0}</span>
                     </button>
@@ -229,7 +225,7 @@ const Blog = () => {
                         <span>Share</span>
                       </button>
                       {showShareMenu[post.id] && (
-                        <div className="absolute w-48 top-full right-0 mt-2 p-2 bg-white rounded-lg shadow-xl flex flex-col gap-2 z-10">
+                        <div className="absolute w-48 top-full mt-2 p-2 bg-white rounded-lg shadow-xl flex flex-col gap-2 z-10">
                           <button
                             onClick={() =>
                               handlePlatformShare("whatsapp", post)
@@ -291,7 +287,7 @@ const Blog = () => {
                       )}
                     </div>
                     <span className="text-sm text-gray-600">
-                      Reactions: {totalReactions(post)}
+                      Reactions: {post.reactionsByUsers?.length}
                     </span>
                   </div>
                   <span className="text-sm text-gray-500">

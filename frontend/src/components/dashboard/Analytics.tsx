@@ -3,9 +3,14 @@ import React, { useContext, useEffect, useState } from "react";
 import { BarChart, Users, ThumbsUp, MessageCircle } from "lucide-react";
 import { AnalyticsAPI } from "../../services/API/Analytics";
 import { StoreContext } from "../../context/StoreContext";
+import { Post } from "../../types";
+import { PostsAPI } from "../../services/API/Posts";
+import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 
 const Analytics = () => {
-  const { token } = useContext(StoreContext);
+  const { token, setIsLoading } = useContext(StoreContext);
+  const [posts, setPosts] = useState<Post[]>([]);
   const [stats, setStats] = useState({
     totalViews: 0,
     totalLikes: 0,
@@ -13,11 +18,9 @@ const Analytics = () => {
     popularPosts: [],
   });
 
+  const navigate = useNavigate();
 
-  useEffect(() => {
-    if (!token) return;
-
-    const fetchStats = async () => {
+  const fetchStats = async () => {
       try{
         const response = await AnalyticsAPI.getAnalytics(token);
         
@@ -37,7 +40,30 @@ const Analytics = () => {
       }
     };
 
+    const fetchPosts = async () => {
+      setIsLoading(true);
+      try {
+        const response = await PostsAPI.getAllPosts();
+        const sortedPosts = response.data.posts.sort((a: any, b: any) => b.likeCount - a.likeCount);
+        setPosts(sortedPosts);
+      } catch (error) {
+        console.error("Error fetching posts:", error);
+        toast.error("Failed to fetch posts");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    const detailsPost = (postId: string) => {
+      navigate(`/post/${postId}`);
+    }
+
+
+  useEffect(() => {
+    if (!token) return;
+
     fetchStats();
+    fetchPosts();
   }, [token]);
 
 
@@ -89,24 +115,29 @@ const Analytics = () => {
           Popular Posts
         </h3>
         <div className="space-y-4">
-          {/* {stats.popularPosts?.map((post: any) => (
-            <div
-              key={post.id}
-              className="flex items-center justify-between p-4 hover:bg-gray-50 rounded-lg"
-            >
-              <span className="text-gray-800">{post.title}</span>
-              <div className="flex items-center space-x-4 text-gray-600">
-                <span className="flex items-center">
-                  <BarChart className="w-4 h-4 mr-1" />
-                  {post.view_count}
-                </span>
-                <span className="flex items-center">
-                  <ThumbsUp className="w-4 h-4 mr-1" />
-                  {post.like_count}
-                </span>
+          {posts.length > 0 ? 
+            posts.map((post: any) => (
+              <div
+                key={post.id}
+                onClick={() => detailsPost(post.id)}
+                className="flex items-center justify-between p-4 hover:bg-gray-50 border-b cursor-pointer"
+              >
+                <span className="text-gray-800">{post.title}</span>
+                <div className="flex items-center space-x-4 text-gray-600">
+                  <span className="flex items-center">
+                    <BarChart className="w-4 h-4 mr-1" />
+                    {post.viewCount}
+                  </span>
+                  <span className="flex items-center">
+                    <ThumbsUp className="w-4 h-4 mr-1" />
+                    {post.likeCount}
+                  </span>
+                </div>
               </div>
-            </div>
-          ))} */}
+            )) 
+            : 
+              <p className="text-gray-500">No posts available</p>
+            }
         </div>
       </div>
     </div>

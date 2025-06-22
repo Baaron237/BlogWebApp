@@ -7,6 +7,8 @@ export type Post = {
   likeCount: number;
   viewCount: number;
   createdAt: string;
+  likedByUsers?: {id: string}[];
+  reactionsByUsers?: {Reaction: {emoji: string}, userId: string}[];
   [key: string]: any;
 };
 

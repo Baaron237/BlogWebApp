@@ -20,7 +20,7 @@ import { ThemesAPI } from "../services/API/Themes";
 import dayjs from "dayjs";
 import "dayjs/locale/fr";
 import { API_URL } from "../constants/API_URL";
-import { Post, Theme, Reaction } from "../types";
+import { Post, Theme } from "../types";
 import { StoreContext } from "../context/StoreContext";
 
 dayjs.locale("fr");
@@ -170,15 +170,21 @@ const PostView = () => {
   const [showCommentEmojiPicker, setShowCommentEmojiPicker] = useState(false);
   const [showReactionDetails, setShowReactionDetails] = useState(false);
   const [showShareMenu, setShowShareMenu] = useState(false);
-  const [reactions, setReactions] = useState<Reaction[]>([]);
   const [comments, setComments] = useState<any[]>([]);
   const [commentText, setCommentText] = useState("");
   const [isLiked, setIsLiked] = useState(false);
-  const { token } = useContext(StoreContext)
+  const { token, user } = useContext(StoreContext)
+  const [reactionCount, setReactionCount] = useState(0);
 
   const fetchPost = async () => {
     try {
       const response = await PostsAPI.getOnePost(id!, token!);
+
+      setReactionCount(response.data.post.reactionsByUsers?.length || 0);
+      const hasLiked = response.data.post.likedByUsers.some(u => u.id === user.id);
+      
+      setIsLiked(hasLiked);
+
       setPost(response.data.post || {});
     } catch (error) {
       console.error("Error fetching post:", error);
@@ -194,14 +200,6 @@ const PostView = () => {
     }
   };
 
-  const fetchReactions = async () => {
-    try {
-      const response = await PostsAPI.getReactions(id!);
-      setReactions(response.data.reactions || []);
-    } catch (error) {
-      console.error("Error fetching reactions:", error);
-    }
-  };
 
   const fetchActiveTheme = async () => {
     try {
@@ -283,8 +281,8 @@ const PostView = () => {
 
   const handleEmojiSelect = async (emoji: string) => {
     try {
-      await PostsAPI.addReaction(id!, emoji);
-      fetchReactions();
+      await PostsAPI.addReaction(id!, emoji, token!);
+      fetchPost();
       setShowEmojiPicker(false);
       toast.success("Reaction added!");
     } catch (error) {
@@ -327,17 +325,12 @@ const PostView = () => {
     if (id) {
       fetchPost();
       fetchComments();
-      fetchReactions();
       fetchActiveTheme();
     }
   }, [id]);
 
   if (!post) return null;
 
-  const totalReactions = reactions.reduce(
-    (sum, reaction) => sum + reaction.count,
-    0
-  );
 
   return (
     <div
@@ -376,7 +369,7 @@ const PostView = () => {
               ))}
           </div>
 
-          {post.mediaUrls?.map((media: any, index: number) => (
+          {post.media_urls?.map((media: any, index: number) => (
             <div key={index}>
               {media.content
                 .split("\n")
@@ -418,18 +411,45 @@ const PostView = () => {
               </button>
 
               <div className="relative">
-                <button
-                  onClick={() => {
-                    setShowEmojiPicker(!showEmojiPicker);
-                    setShowReactionDetails(false);
-                    setShowCommentEmojiPicker(false);
-                    setShowShareMenu(false);
-                  }}
-                  className="flex items-center space-x-2 hover:opacity-75"
-                >
-                  <Smile className="w-6 h-6" />
-                  <span>{totalReactions}</span>
-                </button>
+                {
+                  (post.reactionsByUsers?.length ?? 0) > 0 ? (
+                    <button
+                      onClick={() => {
+                        setShowEmojiPicker(!showEmojiPicker);
+                        setShowReactionDetails(false);
+                        setShowCommentEmojiPicker(false);
+                        setShowShareMenu(false);
+                      }}
+                      className="flex justify-between items-center hover:opacity-75"
+                    >
+                      <p className="text-lg mr-4 flex">
+                        <span className="z-30">
+                          {post.reactionsByUsers?.[0]?.Reaction.emoji}
+                        </span>
+                        <span className="z-20 !-ml-2">
+                          {post.reactionsByUsers?.[1]?.Reaction.emoji}
+                        </span>
+                        <span className=" !-ml-3">
+                          {post.reactionsByUsers?.[2]?.Reaction.emoji}
+                        </span>
+                      </p>
+                      <p>{reactionCount}</p>
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        setShowEmojiPicker(!showEmojiPicker);
+                        setShowReactionDetails(false);
+                        setShowCommentEmojiPicker(false);
+                        setShowShareMenu(false);
+                      }}
+                      className="flex items-center space-x-2 hover:opacity-75"
+                    >
+                      <Smile className="w-6 h-6" />
+                      <span>{reactionCount}</span>
+                    </button>
+                  ) 
+                }
 
                 {showEmojiPicker && (
                   <div className="absolute w-44 top-full left-0 mt-2 p-2 bg-white rounded-lg shadow-xl grid grid-cols-4 gap-2 overflow-y-auto max-h-64">
@@ -442,24 +462,6 @@ const PostView = () => {
                         {emoji}
                       </button>
                     ))}
-                  </div>
-                )}
-
-                {showReactionDetails && (
-                  <div className="absolute w-44 top-full left-0 mt-2 p-2 bg-white rounded-lg shadow-xl">
-                    {reactions.length > 0 ? (
-                      reactions.map((reaction) => (
-                        <div
-                          key={reaction.emoji}
-                          className="flex items-center justify-between text-lg"
-                        >
-                          <span>{reaction.emoji}</span>
-                          <span>{reaction.count}</span>
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-sm text-gray-500">No reactions yet</p>
-                    )}
                   </div>
                 )}
               </div>
@@ -535,16 +537,6 @@ const PostView = () => {
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-2 mb-4">
-            {reactions.map((reaction) => (
-              <div
-                key={reaction.emoji}
-                className="text-xl bg-white bg-opacity-10 rounded-full w-10 h-10 flex items-center justify-center"
-              >
-                {reaction.emoji}
-              </div>
-            ))}
-          </div>
 
           <div className="space-y-4">
             <h3 className="text-xl font-semibold">Comments</h3>
@@ -554,8 +546,9 @@ const PostView = () => {
                   key={comment.id}
                   className="text-lg bg-gray-400 bg-opacity-10 rounded-lg p-2 w-full"
                 >
-                  <p>{comment.message}</p>
-                  <p className="text-gray-500 text-sm">Par {comment.author.username} le {formatDate(comment.created_at)}</p>
+                  <p className="text-gray-500 text-sm">{comment.author.username}</p>
+                  <p className="ml-3 my-1">{comment.message}</p>
+                  <p className="text-gray-500 text-[12px]">{formatDate(comment.created_at)}</p>
                 </div>
               ))}
             </div>

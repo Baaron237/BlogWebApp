@@ -24,11 +24,22 @@ const Illustration = ({ index, values, onChange, id } : { index: number, values:
             </div>
             {
                 !id ? (
-                    <label className="w-max p-1 flex items-center border-2 border-dashed rounded-lg cursor-pointer hover:bg-gray-50">
-                        <div className="flex items-center">
-                            <ImageIcon className="w-8 h-8 text-gray-400" />
-                            <span className="text-sm text-gray-500">Add Media</span>
-                        </div>
+                    <label style={{ width: imgCurrent ? '100%' : 'max-content'}} className="p-1 flex items-center border-2 border-dashed rounded-lg cursor-pointer hover:bg-gray-50">
+                        {
+                            imgCurrent ? (
+                                <img 
+                                    src={URL.createObjectURL(imgCurrent)} 
+                                    alt="" 
+                                    className="object-cover rounded-lg"
+                                    crossOrigin="anonymous"
+                                />
+                            ) : (
+                                <div className="flex items-center">
+                                    <ImageIcon className="w-8 h-8 text-gray-400" />
+                                    <span className="text-sm text-gray-500">Add Media</span>
+                                </div>
+                            )
+                        }
                         <input
                             type="file"
                             className="hidden"
