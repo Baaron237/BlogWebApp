@@ -261,12 +261,12 @@ router.put("/like/:postId", authenticateToken, async (req, res) => {
       await post.removeLikedByUser(userId);
       post.likeCount -= 1;
       await post.save();
-      return res.status(200).json({ message: "Like removed", liked: false });
+      return res.status(200).json({ message: "Like removed", liked: false, likeCount: post.likeCount });
     } else {
       await post.addLikedByUser(userId);
       post.likeCount += 1;
       await post.save();
-      return res.status(200).json({ message: "Post liked", liked: true });
+      return res.status(200).json({ message: "Post liked", liked: true, likeCount: post.likeCount });
     }
   } catch (error) {
     console.error("Like error:", error);

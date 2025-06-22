@@ -22,6 +22,7 @@ import "dayjs/locale/en";
 import { API_URL } from "../constants/API_URL";
 import { Post, Theme } from "../types";
 import { StoreContext } from "../context/StoreContext";
+import Picker from "emoji-picker-react";
 
 
 
@@ -40,18 +41,21 @@ const PostView: React.FC = () => {
   const [isLiked, setIsLiked] = useState(false);
   const { token, user } = useContext(StoreContext)
   const [reactionCount, setReactionCount] = useState(0);
+  const [likeCount, setLikeCount] = useState(0);
+
 
   const fetchPost = async () => {
     if (!id || !token) return;
     try {
       const response = await PostsAPI.getOnePost(id!, token!);
 
-      setReactionCount(response.data.post.reactionsByUsers?.length || 0);
-      const hasLiked = response.data.post.likedByUsers.some(u => u.id === user.id);
-      
-      setIsLiked(hasLiked);
+      console.log("Post data:", response.data.post);
 
       setPost(response.data.post || {});
+      setLikeCount(response.data.post.likeCount || 0);
+      setIsLiked(response.data.post.likedByUsers.some(u => u.id === user.id));
+      setReactionCount(response.data.post.reactionsByUsers?.length || 0);
+
     } catch (error) {
       console.error("Error fetching post:", error);
       toast.error("Failed to load post");
@@ -76,22 +80,19 @@ const PostView: React.FC = () => {
       setActiveTheme(response.data?.theme || null);
     } catch (error) {
       console.error("Error fetching active theme:", error);
-      toast.error("Failed to load theme");
     }
   };
 
   const handleLike = async () => {
-    if (!id || !token) return;
-    try {
-      const response = await PostsAPI.likePost(id, token);
-      setIsLiked(response.data.liked);
-      fetchPost();
-      toast.success(response.data.liked ? "Post liked!" : "Like removed");
-    } catch (error) {
-      console.error("Error liking post:", error);
-      toast.error("Failed to like post");
-    }
-  };
+  try {
+    const response = await PostsAPI.likePost(id!, token!);
+    setIsLiked(response.data.liked);
+    setLikeCount(response.data.likeCount);  // si renvoyé par API
+  } catch (error) {
+    console.error(error);
+  }
+};
+
 
   const handleShare = (platform: string) => {
     if (!post) return;
@@ -143,10 +144,10 @@ const PostView: React.FC = () => {
     }
   };
 
-  const handleEmojiSelect = async (emoji: string ) => {
+  const handleEmojiSelect = async (emojiData: any, event: React.MouseEvent) => {
     if (!id) return;
     try {
-      await PostsAPI.addReaction(id!, emoji, token!);
+      await PostsAPI.addReaction(id!, emojiData.emoji , token!);
       fetchPost();
       setShowEmojiPicker(false);
       toast.success("Reaction added!");
@@ -279,7 +280,7 @@ const PostView: React.FC = () => {
                     isLiked ? "text-blue-600" : "text-gray-600"
                   }`}
                 />
-                <span className="text-sm">{post.likeCount} Likes</span>
+                <span className="text-sm">{likeCount} Likes</span>
               </button>
               <div className="relative">
                 {
@@ -304,7 +305,7 @@ const PostView: React.FC = () => {
                           {post.reactionsByUsers?.[2]?.Reaction.emoji}
                         </span>
                       </p>
-                      <p>{reactionCount}</p>
+                      <p className="ml-4">{reactionCount}</p>
                     </button>
                   ) : (
                     <button
