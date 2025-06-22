@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import React, { useContext, useState } from "react";
 import { Routes, Route, Link, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -17,15 +17,24 @@ import { StoreContext } from "../context/StoreContext";
 const Dashboard = () => {
   const { logout } = useContext(StoreContext);
   const navigate = useNavigate();
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
-  const handleLogout = () => {
+  const handleLogoutClick = () => {
+    setShowLogoutConfirm(true);
+  };
+
+  const confirmLogout = () => {
     logout();
     navigate("/");
+    setShowLogoutConfirm(false);
+  };
+
+  const cancelLogout = () => {
+    setShowLogoutConfirm(false);
   };
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      {/* Sidebar */}
       <div className="w-64 bg-white shadow-lg">
         <div className="p-6">
           <h1 className="text-2xl font-bold text-gray-800">Admin Dashboard</h1>
@@ -60,7 +69,7 @@ const Dashboard = () => {
             Themes
           </Link>
           <button
-            onClick={handleLogout}
+            onClick={handleLogoutClick}
             className="w-full flex items-center px-6 py-3 text-red-600 hover:bg-red-50"
           >
             <LogOut className="w-5 h-5 mr-3" />
@@ -69,7 +78,6 @@ const Dashboard = () => {
         </nav>
       </div>
 
-      {/* Main Content */}
       <div className="flex-1 p-8">
         <Routes>
           <Route path="/" element={<Analytics />} />
@@ -78,6 +86,40 @@ const Dashboard = () => {
           <Route path="/themes" element={<ThemeEditor />} />
         </Routes>
       </div>
+
+      {showLogoutConfirm && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          onClick={cancelLogout}
+        >
+          <div
+            className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-xl font-semibold text-gray-800 mb-4">
+              Confirm Logout
+            </h3>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to log out? You will need to sign in again
+              to access the dashboard.
+            </p>
+            <div className="flex justify-end space-x-4">
+              <button
+                onClick={cancelLogout}
+                className="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmLogout}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

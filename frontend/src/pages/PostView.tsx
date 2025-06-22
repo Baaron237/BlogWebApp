@@ -13,157 +13,22 @@ import {
   Linkedin,
   Link,
 } from "lucide-react";
-import toast from "react-hot-toast";
+import toast, { Toaster } from "react-hot-toast";
 import { PostsAPI } from "../services/API/Posts";
 import { CommentsAPI } from "../services/API/Comments";
 import { ThemesAPI } from "../services/API/Themes";
 import dayjs from "dayjs";
-import "dayjs/locale/fr";
+import "dayjs/locale/en";
 import { API_URL } from "../constants/API_URL";
 import { Post, Theme } from "../types";
 import { StoreContext } from "../context/StoreContext";
 
-dayjs.locale("fr");
 
-const EMOJI_LIST = [
-  "👍",
-  "❤️",
-  "😊",
-  "🎉",
-  "👏",
-  "🔥",
-  "💯",
-  "🙌",
-  "😂",
-  "😍",
-  "🤔",
-  "😢",
-  "🎵",
-  "🌟",
-  "🥳",
-  "😎",
-  "🤗",
-  "😴",
-  "😭",
-  "😡",
-  "🤓",
-  "😱",
-  "🤯",
-  "😴",
-  "🤮",
-  "🤠",
-  "😷",
-  "🤢",
-  "😳",
-  "🥺",
-  "🙄",
-  "😬",
-  "🤥",
-  "😶",
-  "😐",
-  "😕",
-  "😏",
-  "😚",
-  "😋",
-  "😜",
-  "🤪",
-  "😝",
-  "🤤",
-  "😈",
-  "👿",
-  "👹",
-  "💀",
-  "☠️",
-  "👽",
-  "🤖",
-  "🎃",
-  "👻",
-  "🦇",
-  "🕷️",
-  "🌹",
-  "💐",
-  "🌷",
-  "🌸",
-  "🌺",
-  "🌼",
-  "🌻",
-  "🍎",
-  "🍌",
-  "🍇",
-  "🍓",
-  "🍕",
-  "🍔",
-  "🍟",
-  "🌮",
-  "🍣",
-  "🍩",
-  "🎂",
-  "🍰",
-  "☕",
-  "🍺",
-  "🍷",
-  "🍹",
-  "🎧",
-  "📱",
-  "💻",
-  "🎮",
-  "📸",
-  "🎬",
-  "🎤",
-  "🎸",
-  "🎹",
-  "🎻",
-  "🏀",
-  "⚽",
-  "🏈",
-  "🏊",
-  "🏋️",
-  "🚗",
-  "🚀",
-  "✈️",
-  "⛵",
-  "🏝️",
-  "🌍",
-  "🌕",
-  "🌞",
-  "🌝",
-  "🌈",
-  "⚡",
-  "💥",
-  "⭐",
-  "🌟",
-  "💫",
-  "💧",
-  "🔥",
-  "💨",
-  "❄️",
-  "🌬️",
-  "🍂",
-  "🍁",
-  "🎄",
-  "🎅",
-  "🔔",
-  "🎁",
-  "🎆",
-  "🎇",
-  "💖",
-  "💕",
-  "💞",
-  "💓",
-  "💗",
-  "💙",
-  "💚",
-  "💛",
-  "💜",
-  "🖤",
-  "💔",
-  "💌",
-  "💍",
-  "💎",
-];
 
-const PostView = () => {
-  const { id } = useParams();
+dayjs.locale("en");
+
+const PostView: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
   const [post, setPost] = useState<Post | null>(null);
   const [activeTheme, setActiveTheme] = useState<Theme | null>(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -177,6 +42,7 @@ const PostView = () => {
   const [reactionCount, setReactionCount] = useState(0);
 
   const fetchPost = async () => {
+    if (!id || !token) return;
     try {
       const response = await PostsAPI.getOnePost(id!, token!);
 
@@ -188,15 +54,18 @@ const PostView = () => {
       setPost(response.data.post || {});
     } catch (error) {
       console.error("Error fetching post:", error);
+      toast.error("Failed to load post");
     }
   };
 
   const fetchComments = async () => {
+    if (!id) return;
     try {
-      const response = await CommentsAPI.getAllComments(id!);
+      const response = await CommentsAPI.getAllComments(id);
       setComments(response.data.comments || []);
     } catch (error) {
       console.error("Error fetching comments:", error);
+      toast.error("Failed to load comments");
     }
   };
 
@@ -204,25 +73,23 @@ const PostView = () => {
   const fetchActiveTheme = async () => {
     try {
       const response = await ThemesAPI.getActiveTheme();
-      if (response.data?.theme) {
-        setActiveTheme(response.data.theme);
-      } else {
-        console.warn("No active theme found, using default theme.");
-        setActiveTheme(null);
-      }
+      setActiveTheme(response.data?.theme || null);
     } catch (error) {
       console.error("Error fetching active theme:", error);
+      toast.error("Failed to load theme");
     }
   };
 
-
   const handleLike = async () => {
+    if (!id || !token) return;
     try {
-      const response = await PostsAPI.likePost(id!, token!);
+      const response = await PostsAPI.likePost(id, token);
       setIsLiked(response.data.liked);
       fetchPost();
+      toast.success(response.data.liked ? "Post liked!" : "Like removed");
     } catch (error) {
       console.error("Error liking post:", error);
+      toast.error("Failed to like post");
     }
   };
 
@@ -235,7 +102,6 @@ const PostView = () => {
     const encodedText = encodeURIComponent(shareText);
 
     let url = "";
-
     switch (platform) {
       case "whatsapp":
         url = `https://wa.me/?text=${encodedText}%20${encodedUrl}`;
@@ -248,9 +114,7 @@ const PostView = () => {
         break;
       case "instagram":
         navigator.clipboard.writeText(shareUrl);
-        toast.success(
-          "Link copied! Open Instagram to paste it in a Story or message."
-        );
+        toast.success("Link copied! Open Instagram to paste it.");
         url = "https://www.instagram.com";
         break;
       case "linkedin":
@@ -269,7 +133,7 @@ const PostView = () => {
       window.open(url, "_blank");
       if (platform !== "instagram") {
         toast.success(
-          `Sharing on ${platform.charAt(0).toUpperCase() + platform.slice(1)}!`
+          `Shared on ${platform.charAt(0).toUpperCase() + platform.slice(1)}!`
         );
       }
       setShowShareMenu(false);
@@ -279,7 +143,8 @@ const PostView = () => {
     }
   };
 
-  const handleEmojiSelect = async (emoji: string) => {
+  const handleEmojiSelect = async (emoji: string ) => {
+    if (!id) return;
     try {
       await PostsAPI.addReaction(id!, emoji, token!);
       fetchPost();
@@ -291,8 +156,9 @@ const PostView = () => {
     }
   };
 
-  const handleCommentEmojiSelect = (emoji: string) => {
-    setCommentText((prev) => prev + emoji);
+  const handleCommentEmojiSelect = (emojiData: { emoji: string }) => {
+    setCommentText((prev) => prev + emojiData.emoji);
+    setShowCommentEmojiPicker(false);
   };
 
   const addComment = async () => {
@@ -300,13 +166,16 @@ const PostView = () => {
       toast.error("Comment cannot be empty");
       return;
     }
+    if (!id || !token) return;
 
     try {
-      await CommentsAPI.createComment({
-        postId: id,
-        message: commentText,
-      }, token);
-
+      await CommentsAPI.createComment(
+        {
+          postId: id,
+          message: commentText,
+        },
+        token
+      );
       fetchComments();
       setCommentText("");
       setShowCommentEmojiPicker(false);
@@ -317,8 +186,8 @@ const PostView = () => {
     }
   };
 
-  const formatDate = (dateString: Date) => {
-    return dayjs(dateString).format("D MMMM YYYY");
+  const formatDate = (date: Date) => {
+    return dayjs(date).format("MMMM D, YYYY");
   };
 
   useEffect(() => {
@@ -353,20 +222,18 @@ const PostView = () => {
           : undefined
       }
     >
-      <div className="max-w-4xl mx-auto py-12 px-4">
-        <article className="space-y-8">
-          <h1 className="text-4xl font-bold">{post.title}</h1>
+      <div className="max-w-3xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+        <article className="space-y-6 bg-white rounded-xl shadow-lg p-6">
+          <h1 className="text-3xl font-bold sm:text-4xl">{post.title}</h1>
           <div
             className="prose max-w-none"
             style={{ color: activeTheme?.textColor }}
           >
-            {post.content
-              .split("\n")
-              .map((paragraph: string, index: number) => (
-                <p key={index} className="mb-2">
-                  {paragraph}
-                </p>
-              ))}
+            {post.content.split("\n").map((paragraph, index) => (
+              <p key={index} className="mb-4 text-gray-700">
+                {paragraph}
+              </p>
+            ))}
           </div>
 
           {post.media_urls?.map((media: any, index: number) => (
@@ -386,30 +253,34 @@ const PostView = () => {
                 <img
                   src={`${API_URL}/Uploads/${media.url}`}
                   alt={`Image ${index + 1}`}
-                  className="w-full rounded-xl shadow-lg object-cover h-full"
+                  className="w-full h-full rounded-xl shadow-lg object-cover"
                   style={{ pointerEvents: "none" }}
                   crossOrigin="anonymous"
+                  onError={(e) =>
+                    (e.currentTarget.src =
+                      "https://via.placeholder.com/600x400")
+                  }
                 />
               </div>
             </div>
           ))}
-
           <div
-            className="flex items-center justify-between py-6 border-t border-b"
+            className="flex items-center justify-between py-4 border-t border-b"
             style={{ borderColor: activeTheme?.secondaryColor || "#e5e7eb" }}
           >
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-6">
               <button
                 onClick={handleLike}
-                className="flex items-center space-x-2 hover:opacity-75"
+                className="flex items-center space-x-2 hover:opacity-75 transition-opacity"
+                aria-label={isLiked ? "Unlike post" : "Like post"}
               >
                 <ThumbsUp
-                  className={`w-6 h-6 ${isLiked ? "text-blue-600" : ""}`}
+                  className={`w-5 h-5 ${
+                    isLiked ? "text-blue-600" : "text-gray-600"
+                  }`}
                 />
-
-                <span>{post.likeCount}</span>
+                <span className="text-sm">{post.likeCount} Likes</span>
               </button>
-
               <div className="relative">
                 {
                   (post.reactionsByUsers?.length ?? 0) > 0 ? (
@@ -452,20 +323,11 @@ const PostView = () => {
                 }
 
                 {showEmojiPicker && (
-                  <div className="absolute w-44 top-full left-0 mt-2 p-2 bg-white rounded-lg shadow-xl grid grid-cols-4 gap-2 overflow-y-auto max-h-64">
-                    {EMOJI_LIST.map((emoji) => (
-                      <button
-                        key={emoji}
-                        onClick={() => handleEmojiSelect(emoji)}
-                        className="text-2xl hover:scale-125 transition-transform"
-                      >
-                        {emoji}
-                      </button>
-                    ))}
+                  <div className="absolute top-full left-0 mt-2 z-50 max-h-[70vh] overflow-y-auto">
+                    <Picker onEmojiClick={handleEmojiSelect} />
                   </div>
                 )}
               </div>
-
               <div className="relative">
                 <button
                   onClick={(e) => {
@@ -475,62 +337,67 @@ const PostView = () => {
                     setShowCommentEmojiPicker(false);
                     setShowReactionDetails(false);
                   }}
-                  className="flex items-center space-x-2 hover:opacity-75"
+                  className="flex items-center space-x-2 hover:opacity-75 transition-opacity"
+                  aria-label="Open share menu"
                 >
-                  <Share2 className="w-6 h-6" />
-                  <span>Share</span>
+                  <Share2 className="w-5 h-5 text-gray-600" />
+                  <span className="text-sm">Share</span>
                 </button>
-
                 {showShareMenu && (
-                  <div className="absolute w-48 top-full left-0 mt-2 p-2 bg-white rounded-lg shadow-xl flex flex-col gap-2">
+                  <div className="absolute w-44 top-full left-0 mt-2 p-2 bg-white rounded-lg shadow-xl flex flex-col gap-1">
                     <button
                       onClick={() => handleShare("whatsapp")}
-                      className="flex items-center space-x-2 hover:bg-gray-100 p-2 rounded"
+                      className="flex items-center space-x-2 hover:bg-gray-100 p-2 rounded text-sm"
+                      aria-label="Share on WhatsApp"
                     >
-                      <MessageCircle className="w-5 h-5" />
+                      <MessageCircle className="w-4 h-4 text-gray-600" />
                       <span>WhatsApp</span>
                     </button>
                     <button
                       onClick={() => handleShare("facebook")}
-                      className="flex items-center space-x-2 hover:bg-gray-100 p-2 rounded"
+                      className="flex items-center space-x-2 hover:bg-gray-100 p-2 rounded text-sm"
+                      aria-label="Share on Facebook"
                     >
-                      <Facebook className="w-5 h-5" />
+                      <Facebook className="w-4 h-4 text-gray-600" />
                       <span>Facebook</span>
                     </button>
                     <button
                       onClick={() => handleShare("x")}
-                      className="flex items-center space-x-2 hover:bg-gray-100 p-2 rounded"
+                      className="flex items-center space-x-2 hover:bg-gray-100 p-2 rounded text-sm"
+                      aria-label="Share on X"
                     >
-                      <X className="w-5 h-5" />
+                      <X className="w-4 h-4 text-gray-600" />
                       <span>X</span>
                     </button>
                     <button
                       onClick={() => handleShare("instagram")}
-                      className="flex items-center space-x-2 hover:bg-gray-100 p-2 rounded"
+                      className="flex items-center space-x-2 hover:bg-gray-100 p-2 rounded text-sm"
+                      aria-label="Share on Instagram"
                     >
-                      <Instagram className="w-5 h-5" />
+                      <Instagram className="w-4 h-4 text-gray-600" />
                       <span>Instagram</span>
                     </button>
                     <button
                       onClick={() => handleShare("linkedin")}
-                      className="flex items-center space-x-2 hover:bg-gray-100 p-2 rounded"
+                      className="flex items-center space-x-2 hover:bg-gray-100 p-2 rounded text-sm"
+                      aria-label="Share on LinkedIn"
                     >
-                      <Linkedin className="w-5 h-5" />
+                      <Linkedin className="w-4 h-4 text-gray-600" />
                       <span>LinkedIn</span>
                     </button>
                     <button
                       onClick={() => handleShare("reddit")}
-                      className="flex items-center space-x-2 hover:bg-gray-100 p-2 rounded"
+                      className="flex items-center space-x-2 hover:bg-gray-100 p-2 rounded text-sm"
+                      aria-label="Share on Reddit"
                     >
-                      <Link className="w-5 h-5" />
+                      <Link className="w-4 h-4 text-gray-600" />
                       <span>Reddit</span>
                     </button>
                   </div>
                 )}
               </div>
             </div>
-
-            <div className="flex items-center space-x-2 text-sm opacity-75">
+            <div className="flex items-center space-x-2 text-xs text-gray-500">
               <span>{post.viewCount} views</span>
               <span>•</span>
               <span>{formatDate(post.created_at)}</span>
@@ -552,56 +419,52 @@ const PostView = () => {
                 </div>
               ))}
             </div>
-
             <div className="flex items-center space-x-2">
               <textarea
                 value={commentText}
                 onChange={(e) => setCommentText(e.target.value)}
                 placeholder="Add a comment..."
-                className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full p-1 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none text-sm"
                 style={{
-                  color: activeTheme?.textColor,
+                  color: activeTheme?.textColor || "#111827",
                   backgroundColor: activeTheme?.backgroundColor || "#f3f4f6",
                 }}
                 rows={2}
+                aria-label="Field to add a comment"
               />
               <div className="relative">
                 <button
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation();
                     setShowCommentEmojiPicker(!showCommentEmojiPicker);
                     setShowEmojiPicker(false);
                     setShowReactionDetails(false);
                     setShowShareMenu(false);
                   }}
-                  className="hover:opacity-75"
+                  className="hover:opacity-75 transition-opacity"
+                  aria-label="Open emoji picker for comments"
                 >
-                  <Smile className="w-6 h-6" />
+                  <Smile className="w-5 h-5 text-gray-600" />
                 </button>
                 {showCommentEmojiPicker && (
-                  <div className="absolute w-44 top-full right-0 mt-2 p-2 bg-white rounded-lg shadow-xl grid grid-cols-4 gap-2 overflow-y-auto max-h-64">
-                    {EMOJI_LIST.map((emoji) => (
-                      <button
-                        key={emoji}
-                        onClick={() => handleCommentEmojiSelect(emoji)}
-                        className="text-2xl hover:scale-125 transition-transform"
-                      >
-                        {emoji}
-                      </button>
-                    ))}
+                  <div className="absolute top-full right-0 mt-2 z-50 max-h-[70vh] overflow-y-auto">
+                    <Picker onEmojiClick={handleCommentEmojiSelect} />
                   </div>
                 )}
               </div>
               <button
                 onClick={addComment}
-                className="bg-purple-600 text-white p-2 rounded-lg hover:bg-purple-700 transition-colors"
+                className="bg-purple-600 text-white p-2 rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50"
                 disabled={!commentText.trim()}
+                aria-label="Submit comment"
               >
-                <Send className="w-6 h-6" />
+                <Send className="w-5 h-5" />
               </button>
             </div>
           </div>
         </article>
       </div>
+      <Toaster position="top-right" />
     </div>
   );
 };
