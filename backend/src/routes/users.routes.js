@@ -1,7 +1,7 @@
 import express from "express";
 import jwt from "jsonwebtoken";
 import { authenticateToken, isAdmin } from "../middleware/auth.js";;
-import { User } from "../models/index.js";
+import { PostView, User } from "../models/index.js";
 
 const router = express.Router();
 
@@ -43,6 +43,12 @@ router.delete("/:id", authenticateToken, isAdmin, async (req, res) => {
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
+
+    await PostView.destroy({
+      where: {
+        userId: user.id
+      }
+    })
     await user.destroy();
     res.status(200).json({ message: "User deleted successfully" });
   } catch (error) {

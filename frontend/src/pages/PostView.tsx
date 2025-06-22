@@ -412,7 +412,7 @@ const PostView: React.FC = () => {
                   key={comment.id}
                   className="text-lg bg-gray-400 bg-opacity-10 rounded-lg p-2 w-full"
                 >
-                  <p className="text-gray-500 text-sm">{comment.author.username}</p>
+                  <p className="text-gray-500 text-sm">{comment.author?.username || 'unknown'}</p>
                   <p className="ml-3 my-1">{comment.message}</p>
                   <p className="text-gray-500 text-[12px]">{formatDate(comment.created_at)}</p>
                 </div>
