@@ -1,5 +1,5 @@
 import express from "express";
-import { Like, MediaUrls, Post, PostView } from "../models/index.js";
+import { Comment, Like, MediaUrls, Post, PostView, Reaction, User } from "../models/index.js";
 import { authenticateToken, isAdmin } from "../middleware/auth.js";
 import { upload } from "../middleware/upload.js";
 import * as path from 'path';
@@ -19,12 +19,27 @@ router.get("/", async (req, res) => {
           model: MediaUrls,
           as: "media_urls",
           attributes: ["id", "url", "content", "order"],
-        }
+        },
+        {
+          model: User,
+          as: "reactionsByUsers",
+          attributes: ["username"],
+          through: {
+            attributes: ['emoji']
+          }
+        },
+        {
+          model: User,
+          as: "likedByUsers",
+          attributes: ["id"],
+          through: { attributes: [] }
+        },
       ],
       order: [["createdAt", "DESC"]],
     });
     res.status(200).json({ posts });
   } catch (error) {
+    console.error("Error fetching posts:", error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -38,7 +53,21 @@ router.get("/:id", authenticateToken , async (req, res) => {
           model: MediaUrls,
           as: "media_urls",
           attributes: ["id", "url", "content", "order"],
-        }
+        },
+        {
+          model: User,
+          as: "reactionsByUsers",
+          attributes: ["username"],
+          through: {
+            attributes: ['emoji']
+          }
+        },
+        {
+          model: User,
+          as: "likedByUsers",
+          attributes: ["id"],
+          through: { attributes: [] }
+        },
       ]
     });
     if (!post) {
@@ -189,9 +218,27 @@ router.delete("/:id", authenticateToken, isAdmin, async (req, res) => {
       },
     });
 
+    await Like.destroy({
+      where: {
+        postId: post.id,
+      },
+    });
+
+    await PostView.destroy({
+      where: {
+        postId: post.id,
+      },
+    });
+
+    await Comment.destroy({
+      where: {
+        postId: post.id,
+      },
+    });
+
     await post.destroy();
 
-    res.status(200).json({ message: "Post and its illustrations deleted successfully" });
+    res.status(200).json({ message: "Post and deleted successfully" });
   } catch (error) {
     console.error("Error deleting post: ", error);
     res.status(500).json({ error: error.message });
@@ -227,5 +274,42 @@ router.put("/like/:postId", authenticateToken, async (req, res) => {
   }
 });
 
+router.post("/:postId/react", authenticateToken, async (req, res) => {
+  const { emoji } = req.body;
+  const postId = req.params.postId;
+  const userId = req.user.id;
+
+  if (!emoji) {
+    return res.status(400).json({ error: "Emoji is required" });
+  }
+
+  try {
+    const post = await Post.findByPk(postId);
+    if (!post) {
+      return res.status(404).json({ error: "Post not found" });
+    }
+
+    const existingReaction = await Reaction.findOne({
+      where: { userId, postId },
+    });
+
+    if (existingReaction) {
+      existingReaction.emoji = emoji;
+      await existingReaction.save();
+      return res.status(200).json({ message: "Reaction updated", reaction: existingReaction });
+    }
+
+    const newReaction = await Reaction.create({
+      userId,
+      postId,
+      emoji,
+    });
+
+    res.status(201).json({ message: "Reaction added", reaction: newReaction });
+  } catch (error) {
+    console.error("Reaction error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
 
 export default router;
